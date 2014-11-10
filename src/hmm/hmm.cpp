@@ -21,6 +21,8 @@
 #include <complex>
 
 #define EPS 1e-3
+#define LIM 1e-20
+#define INF 1e20
 
 #define DPRINTC(C) printf(#C " = %c\n", (C))
 #define DPRINTS(S) printf(#S " = %s\n", (S))
@@ -40,8 +42,10 @@ public:
     double **T; // transition probability matrix
     double **P; // output probability matrix
     
-    double **A, **B; // alpha, beta matrices
-    
+    double **A, **B, **Pst; // alpha, beta, state prob. matrices
+    int *Arn, *Brn; // how many times have we renormalised A, B
+    int renorm;
+    double likelihood;
     
     HMM(int n, int obs) : n(n), obs(obs)
     {
@@ -99,11 +103,15 @@ public:
     {
         int tlen = Y.size();
         
+        // forward
         A = new double*[tlen];
+        Arn = new int[tlen];
         for (int i=0;i<tlen;i++) A[i] = new double[n];
         for (int i=0;i<n;i++) A[0][i] = P[i][Y[0]];
+        Arn[0] = 0;
         for (int t=1;t<tlen;t++)
         {
+            double fullsum = 0.0;
             for (int j=0;j<n;j++)
             {
                 double sum = 0.0;
@@ -112,14 +120,26 @@ public:
                     sum += A[t-1][i] * T[i][j] * P[j][Y[t]];
                 }
                 A[t][j] = sum;
+                fullsum += sum;
+            }
+            Arn[t] = Arn[t-1];
+            if (fullsum < LIM)
+            {
+                // renormalise as necessary
+                Arn[t]++;
+                for (int j=0;j<n;j++) A[t][j] *= INF;
             }
         }
         
+        // backward
         B = new double*[tlen];
+        Brn = new int[tlen];
         for (int i=0;i<tlen;i++) B[i] = new double[n];
         for (int i=0;i<n;i++) B[tlen-1][i] = 1.0;
+        Brn[tlen-1] = 0;
         for (int t=tlen-2;t>=0;t--)
         {
+            double fullsum = 0.0;
             for (int i=0;i<n;i++)
             {
                 double sum = 0.0;
@@ -128,8 +148,149 @@ public:
                     sum += T[i][j] * P[j][Y[t+1]] * B[t+1][j];
                 }
                 B[t][i] = sum;
+                fullsum += sum;
+            }
+            Brn[t] = Brn[t+1];
+            if (fullsum < LIM)
+            {
+                // renormalise as necessary
+                Brn[t]++;
+                for (int j=0;j<n;j++) B[t][j] *= INF;
             }
         }
+        
+        // likelihood
+        likelihood = 0.0;
+        for (int i=0;i<n;i++) likelihood += A[0][i] * B[0][i];
+        renorm = Arn[0] + Brn[0];
+        while (likelihood < LIM)
+        {
+            likelihood *= INF;
+            renorm++;
+        }
+        
+        Pst = new double*[tlen];
+        for (int i=0;i<tlen;i++) Pst[i] = new double[n];
+        for (int t=0;t<tlen;t++)
+        {
+            double sum = 0.0;
+            for (int i=0;i<n;i++)
+            {
+                Pst[t][i] = A[t][i] * B[t][i];
+                sum += Pst[t][i];
+            }
+            for (int i=0;i<n;i++) Pst[t][i] /= sum;
+        }
+    }
+    
+    vector<int> viterbi(vector<int> Y)
+    {
+        int tlen = Y.size();
+        
+        double **V = new double*[tlen];
+        for (int i=0;i<tlen;i++) V[i] = new double[n];
+        int ***paths = new int**[2];
+        for (int id=0;id<2;id++)
+        {
+            paths[id] = new int*[n];
+            for (int i=0;i<n;i++) paths[id][i] = new int[tlen];
+        }
+        
+        // initialisation
+        for (int i=0;i<n;i++)
+        {
+            V[0][i] = P[i][Y[0]];
+            paths[0][i][0] = i;
+        }
+        
+        for (int t=1;t<tlen;t++)
+        {
+            for (int i=0;i<n;i++)
+            {
+                double maxx = -1.0;
+                int maxState = -1;
+                for (int j=0;j<n;j++)
+                {
+                    double curr = V[t-1][j] * T[j][i] * P[i][Y[t]];
+                    if (curr > maxx)
+                    {
+                        maxx = curr;
+                        maxState = j;
+                    }
+                }
+                V[t][i] = maxx;
+                for (int j=0;j<t;j++)
+                {
+                    paths[t&1][i][j] = paths[(t+1)&1][maxState][j];
+                }
+                paths[t&1][i][t] = i;
+            }
+        }
+        
+        double best = -1;
+        int bestState = -1;
+        for (int i=0;i<n;i++)
+        {
+            if (V[tlen-1][i] > best)
+            {
+                best = V[tlen-1][i];
+                bestState = i;
+            }
+        }
+        
+        vector<int> ret;
+        ret.resize(tlen);
+        for (int i=0;i<tlen;i++) ret[i] = paths[(tlen-1)&1][bestState][i];
+        
+        return ret;
+    }
+    
+    void baumwelch(vector<int> Y)
+    {
+        forward_backward(Y);
+        
+        int tlen = Y.size();
+        
+        double **nextP = new double*[n];
+        for (int i=0;i<n;i++) nextP[i] = new double[obs];
+        
+        double powers[10];
+        for (int i=0;i<10;i++) powers[i] = pow(LIM, i-6);
+        
+        double PP, QQ;
+        
+        for (int i=0;i<n;i++)
+        {
+            QQ = 0.0;
+            for (int k=0;k<obs;k++)
+            {
+                nextP[i][k] = 0.0;
+            }
+            for (int t=0;t<tlen-1;t++)
+            {
+                double curr = ((A[t][i] * B[t][i]) / likelihood) * powers[Arn[t] + Brn[t] - renorm + 6];
+                QQ += curr;
+                nextP[i][Y[t]] += curr;
+            }
+            for (int j=0;j<n;j++)
+            {
+                PP = 0.0;
+                for (int t=0;t<tlen-1;t++)
+                {
+                    PP += A[t][i] * P[j][Y[t+1]] * B[t+1][j] * powers[Arn[t] + Brn[t] - renorm + 6] / likelihood;
+                }
+                T[i][j] *= PP / QQ;
+            }
+            for (int k=0;k<obs;k++)
+            {
+                nextP[i][k] /= QQ;
+            }
+        }
+        
+        for (int i=0;i<n;i++) delete[] P[i];
+        delete[] P;
+        
+        P = nextP;
     }
 };
 
