@@ -298,24 +298,33 @@ int main()
 {
     // test
     int n = 2;
-    int obs = 2;
+    int obs = 3;
+    
     double **T = new double*[n];
     for (int i=0;i<n;i++)
     {
         T[i] = new double[n];
-        for (int j=0;j<n;j++)
-        {
-            T[i][j] = 0.5;
-        }
     }
+    T[0][0] = 0.7; T[0][1] = 0.3;
+    T[1][0] = 0.4; T[1][1] = 0.6;
+    
     double **P = new double*[n];
     for (int i=0;i<n;i++)
     {
         P[i] = new double[obs];
-        for (int j=0;j<obs;j++)
-        {
-            P[i][j] = 0.5;
-        }
     }
+    P[0][0] = 0.5; P[0][1] = 0.4; P[0][2] = 0.1;
+    P[1][0] = 0.1; P[1][1] = 0.3; P[1][2] = 0.6;
+    
     HMM *x = new HMM(n, obs, T, P);
+    
+    vector<int> observations;
+    observations.push_back(0);
+    observations.push_back(1);
+    observations.push_back(2);
+    
+    vector<int> ret = x -> viterbi(observations);
+    
+    for (int i=0;i<ret.size();i++) printf("%d ", ret[i]);
+    printf("\n");
 }
