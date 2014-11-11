@@ -199,7 +199,7 @@ public:
         // initialisation
         for (int i=0;i<n;i++)
         {
-            V[0][i] = P[i][Y[0]];
+            V[0][i] = log(P[i][Y[0]]);
             paths[0][i][0] = i;
         }
         
@@ -211,8 +211,8 @@ public:
                 int maxState = -1;
                 for (int j=0;j<n;j++)
                 {
-                    double curr = V[t-1][j] * T[j][i] * P[i][Y[t]];
-                    if (curr > maxx)
+                    double curr = V[t-1][j] + log(T[j][i]) + log(P[i][Y[t]]);
+                    if (maxState == -1 || curr > maxx)
                     {
                         maxx = curr;
                         maxState = j;
@@ -231,7 +231,7 @@ public:
         int bestState = -1;
         for (int i=0;i<n;i++)
         {
-            if (V[tlen-1][i] > best)
+            if (bestState == -1 || V[tlen-1][i] > best)
             {
                 best = V[tlen-1][i];
                 bestState = i;
