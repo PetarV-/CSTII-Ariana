@@ -189,18 +189,15 @@ public:
         
         double **V = new double*[tlen];
         for (int i=0;i<tlen;i++) V[i] = new double[n];
-        int ***paths = new int**[2];
-        for (int id=0;id<2;id++)
-        {
-            paths[id] = new int*[n];
-            for (int i=0;i<n;i++) paths[id][i] = new int[tlen];
-        }
+        
+        int **prev = new int*[tlen];
+        for (int i=0;i<tlen;i++) prev[i] = new int[n];
         
         // initialisation
         for (int i=0;i<n;i++)
         {
             V[0][i] = log(P[i][Y[0]]);
-            paths[0][i][0] = i;
+            prev[0][i] = 0;
         }
         
         for (int t=1;t<tlen;t++)
@@ -219,11 +216,7 @@ public:
                     }
                 }
                 V[t][i] = maxx;
-                for (int j=0;j<t;j++)
-                {
-                    paths[t&1][i][j] = paths[(t+1)&1][maxState][j];
-                }
-                paths[t&1][i][t] = i;
+                prev[t][i] = maxState;
             }
         }
         
@@ -240,7 +233,11 @@ public:
         
         vector<int> ret;
         ret.resize(tlen);
-        for (int i=0;i<tlen;i++) ret[i] = paths[(tlen-1)&1][bestState][i];
+        for (int t=tlen-1;t>=0;t--)
+        {
+            ret[t] = bestState;
+            bestState = prev[t][bestState];
+        }
         
         return ret;
     }
