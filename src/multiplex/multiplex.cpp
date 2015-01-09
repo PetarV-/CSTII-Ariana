@@ -16,6 +16,7 @@
 #include <complex>
 
 #include "multiplex.h"
+#include "matrix_lib.h"
 
 #define DPRINTC(C) printf(#C " = %c\n", (C))
 #define DPRINTS(S) printf(#S " = %s\n", (S))
@@ -27,15 +28,23 @@ using namespace std;
 typedef long long lld;
 typedef unsigned long long llu;
 
-Multiplex::Multiplex(int n, vector<AbstractGraphLayer> lyrs)
+Multiplex::Multiplex(int n, vector<AbstractGraphLayer*> lyrs)
 {
     this -> n = n;
-    for (int i=0;i<lyrs.size();i++) assert(lyrs[i].get_n() == n);
-    M = new double***[lyrs.size()];
-    for (int i=0;i<lyrs.size();i++)
+    this -> L = lyrs.size();
+    this -> layers.resize(L);
+    
+    for (int i=0;i<L;i++)
     {
-        M[i] = new double**[lyrs.size()];
-        for (int j=0;j<lyrs.size();j++)
+        assert(lyrs[i] -> get_n() == n);
+        this -> layers[i] = lyrs[i];
+    }
+    
+    M = new double***[L];
+    for (int i=0;i<L;i++)
+    {
+        M[i] = new double**[L];
+        for (int j=0;j<L;j++)
         {
             M[i][j] = new double*[n];
             for (int k=0;k<n;k++)
@@ -44,7 +53,7 @@ Multiplex::Multiplex(int n, vector<AbstractGraphLayer> lyrs)
                 for (int l=0;l<n;l++)
                 {
                     if (i != j) M[i][j][k][l] = 0.0;
-                    else M[i][j][k][l] = lyrs[i].get_adj(k, l);
+                    else M[i][j][k][l] = lyrs[i] -> get_adj(k, l);
                 }
             }
         }
@@ -59,6 +68,61 @@ double Multiplex::get_edge(int lyr1, int lyr2, int n1, int n2)
 void Multiplex::set_edge(int lyr1, int lyr2, int n1, int n2, double val)
 {
     M[lyr1][lyr2][n1][n2] = val;
+}
+
+double** Multiplex::get_matrix_form()
+{
+    double** ret = new double*[n*L];
+    for (int i=0;i<n*L;i++)
+    {
+        ret[i] = new double[n*L];
+        
+        int a = i / n;
+        int c = i % n;
+        
+        for (int j=0;j<n*L;j++)
+        {
+            int b = j / n;
+            int d = j % n;
+            ret[i][j] = M[a][b][c][d];
+        }
+    }
+    return ret;
+}
+
+double**** Multiplex::get_communicability_matrix()
+{
+    double **mat = get_matrix_form();
+    double **ex = mat_exp(mat, n*L);
+    
+    double ****ret = new double***[L];
+    for (int i=0;i<L;i++)
+    {
+        ret[i] = new double**[L];
+        for (int j=0;j<L;j++)
+        {
+            ret[i][j] = new double*[n];
+            for (int k=0;k<n;k++)
+            {
+                ret[i][j][k] = new double[n];
+                for (int l=0;l<n;l++)
+                {
+                    ret[i][j][k][l] = mat[i*L+k][j*L+l];
+                }
+            }
+        }
+    }
+    
+    for (int i=0;i<n*L;i++)
+    {
+        delete[] mat[i];
+        delete[] ex[i];
+    }
+    
+    delete[] mat;
+    delete[] ex;
+    
+    return ret;
 }
 
 int main()
