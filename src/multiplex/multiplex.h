@@ -8,20 +8,7 @@
 
 #include <vector>
 
-class AbstractGraphLayer
-{
-public:
-    virtual int get_n();
-    virtual double get_adj(int x, int y);
-};
-
-class SimpleGraphLayer : public AbstractGraphLayer
-{
-private:
-    double **G;
-public:
-    
-};
+#include "../layers/layers.h"
 
 class Multiplex
 {
@@ -31,7 +18,11 @@ private:
     std::vector<AbstractGraphLayer*> layers;
     double ****M;
 public:
+    Multiplex(int n, int L);
+    Multiplex(int n, int L, double ****A);
     Multiplex(int n, std::vector<AbstractGraphLayer*> lyrs);
+    Multiplex(int n, std::vector<AbstractGraphLayer*> lyrs, double **omega);
+    Multiplex(int n, std::vector<AbstractGraphLayer*> lyrs, double ****inter_lyr);
     double get_edge(int lyr1, int lyr2, int n1, int n2);
     void set_edge(int lyr1, int lyr2, int n1, int n2, double val);
     double** get_matrix_form();

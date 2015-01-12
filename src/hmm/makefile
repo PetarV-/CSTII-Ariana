@@ -11,5 +11,5 @@ hmm.o : hmm.h hmm.cpp
 	$(CC) $(CFLAGS) hmm.cpp
 
 clean :
-	\rm *.o *~ hmm &> /dev/null
+	-rm -f *.o *~ hmm &> /dev/null
 

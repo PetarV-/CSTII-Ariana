@@ -14,6 +14,6 @@ objectives.o : objectives.h
 	$(CC) $(CFLAGS) ${OBJFILE} -o objectives.o
 
 clean :
-	\rm *.o *~ nsga2 &> /dev/null
-	\rm *.o *~ objectives &> /dev/null
+	-rm -f *.o *~ nsga2 &> /dev/null
+	-rm -f *.o *~ objectives &> /dev/null
 

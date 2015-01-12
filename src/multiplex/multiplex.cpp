@@ -16,7 +16,7 @@
 #include <complex>
 
 #include "multiplex.h"
-#include "matrix_lib.h"
+#include "../matrix_lib/matrix_lib.h"
 
 #define DPRINTC(C) printf(#C " = %c\n", (C))
 #define DPRINTS(S) printf(#S " = %s\n", (S))
@@ -28,10 +28,62 @@ using namespace std;
 typedef long long lld;
 typedef unsigned long long llu;
 
-Multiplex::Multiplex(int n, vector<AbstractGraphLayer*> lyrs)
+Multiplex::Multiplex(int n, int L) : n(n), L(L)
 {
-    this -> n = n;
-    this -> L = lyrs.size();
+    this -> layers.resize(L);
+    for (int i=0;i<L;i++)
+    {
+        layers[i] = new SimpleGraphLayer(n);
+    }
+    
+    M = new double***[L];
+    for (int i=0;i<L;i++)
+    {
+        M[i] = new double**[L];
+        for (int j=0;j<L;j++)
+        {
+            M[i][j] = new double*[n];
+            for (int k=0;k<n;k++)
+            {
+                M[i][j][k] = new double[n];
+                for (int l=0;l<n;l++)
+                {
+                    M[i][j][k][l] = 0.0;
+                }
+            }
+        }
+    }
+}
+
+Multiplex::Multiplex(int n, int L, double ****A) : n(n), L(L)
+{
+    this -> layers.resize(L);
+    for (int i=0;i<L;i++)
+    {
+        layers[i] = new SimpleGraphLayer(n, A[i][i]);
+    }
+    
+    M = new double***[L];
+    for (int i=0;i<L;i++)
+    {
+        M[i] = new double**[L];
+        for (int j=0;j<L;j++)
+        {
+            M[i][j] = new double*[n];
+            for (int k=0;k<n;k++)
+            {
+                M[i][j][k] = new double[n];
+                for (int l=0;l<n;l++)
+                {
+                    M[i][j][k][l] = A[i][j][k][l];
+                }
+            }
+        }
+    }
+}
+
+Multiplex::Multiplex(int n, vector<AbstractGraphLayer*> lyrs) : n(n), L(lyrs.size())
+{
     this -> layers.resize(L);
     
     for (int i=0;i<L;i++)
@@ -60,6 +112,71 @@ Multiplex::Multiplex(int n, vector<AbstractGraphLayer*> lyrs)
     }
 }
 
+
+Multiplex::Multiplex(int n, std::vector<AbstractGraphLayer*> lyrs, double **omega) : n(n), L(lyrs.size())
+{
+    this -> layers.resize(L);
+    
+    for (int i=0;i<L;i++)
+    {
+        assert(lyrs[i] -> get_n() == n);
+        this -> layers[i] = lyrs[i];
+    }
+    
+    M = new double***[L];
+    for (int i=0;i<L;i++)
+    {
+        M[i] = new double**[L];
+        for (int j=0;j<L;j++)
+        {
+            M[i][j] = new double*[n];
+            for (int k=0;k<n;k++)
+            {
+                M[i][j][k] = new double[n];
+                for (int l=0;l<n;l++)
+                {
+                    if (i != j)
+                    {
+                        if (k != l) M[i][j][k][l] = 0.0;
+                        else M[i][j][k][l] = omega[i][j];
+                    }
+                    else M[i][j][k][l] = lyrs[i] -> get_adj(k, l);
+                }
+            }
+        }
+    }
+}
+
+Multiplex::Multiplex(int n, std::vector<AbstractGraphLayer*> lyrs, double ****inter_lyr) : n(n), L(lyrs.size())
+{
+    this -> layers.resize(L);
+    
+    for (int i=0;i<L;i++)
+    {
+        assert(lyrs[i] -> get_n() == n);
+        this -> layers[i] = lyrs[i];
+    }
+    
+    M = new double***[L];
+    for (int i=0;i<L;i++)
+    {
+        M[i] = new double**[L];
+        for (int j=0;j<L;j++)
+        {
+            M[i][j] = new double*[n];
+            for (int k=0;k<n;k++)
+            {
+                M[i][j][k] = new double[n];
+                for (int l=0;l<n;l++)
+                {
+                    if (i != j) M[i][j][k][l] = inter_lyr[i][j][k][l];
+                    else M[i][j][k][l] = lyrs[i] -> get_adj(k, l);
+                }
+            }
+        }
+    }
+}
+
 double Multiplex::get_edge(int lyr1, int lyr2, int n1, int n2)
 {
     return M[lyr1][lyr2][n1][n2];
@@ -68,6 +185,7 @@ double Multiplex::get_edge(int lyr1, int lyr2, int n1, int n2)
 void Multiplex::set_edge(int lyr1, int lyr2, int n1, int n2, double val)
 {
     M[lyr1][lyr2][n1][n2] = val;
+    if (lyr1 == lyr2) layers[lyr1] -> set_adj(n1, n2, val);
 }
 
 double** Multiplex::get_matrix_form()
@@ -123,9 +241,4 @@ double**** Multiplex::get_communicability_matrix()
     delete[] ex;
     
     return ret;
-}
-
-int main()
-{
-    
 }
