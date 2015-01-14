@@ -200,37 +200,3 @@ double** mat_exp(double **M, int n)
     
     return ret;
 }
-
-int main()
-{
-    int len;
-    double **mat;
-    
-    printf("Input matrix size: ");
-    scanf("%d", &len);
-    
-    mat = new double*[len];
-    
-    printf("Input matrix:\n");
-    for (int i=0;i<len;i++)
-    {
-        mat[i] = new double[len];
-        for (int j=0;j<len;j++)
-        {
-            scanf("%lf", &mat[i][j]);
-        }
-    }
-    
-    printf("EXP(M) = \n");
-    double **fin = mat_exp(mat, len);
-    for (int i=0;i<len;i++)
-    {
-        for (int j=0;j<len;j++)
-        {
-            printf("%lf ", fin[i][j]);
-        }
-        printf("\n");
-    }
-    
-    return 0;
-}

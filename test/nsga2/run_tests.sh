@@ -5,9 +5,9 @@ echo "Testing NSGA-II."
 mkdir test_results &> /dev/null
 tests=("SCH" "FON" "POL" "KUR" "ZDT1" "ZDT2" "ZDT3" "ZDT4" "ZDT6")
 src_dir='../../src/nsga2'
-testobj_dir='../../test/nsga2/test_objs'
-testin_dir='../../test/nsga2/test_inputs'
-testres_dir='../../test/nsga2/test_results'
+testobj_dir='test_objs'
+testin_dir='test_inputs'
+testres_dir='test_results'
 
 cd $src_dir
 
