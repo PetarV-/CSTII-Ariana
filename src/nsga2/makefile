@@ -10,7 +10,7 @@ nsga2 : $(OBJS)
 nsga2.o : objectives.h nsga2.cpp
 	$(CC) $(CFLAGS) nsga2.cpp
 
-objectives.o : objectives.h objectives.cpp
+objectives.o : objectives.h
 	$(CC) $(CFLAGS) ${OBJFILE} -o objectives.o
 
 clean :
