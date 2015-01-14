@@ -1,7 +1,7 @@
 OBJS = nsga2.o objectives.o
 CC = g++
 DEBUG = -g
-CFLAGS = -std=c++11 -Wall --pedantic -c $(DEBUG)
+CFLAGS = -std=c++11 -O3 -Wall -Wextra -Werror -Weffc++ -Wstrict-aliasing --pedantic -c $(DEBUG)
 LFLAGS = -Wall $(DEBUG)
 
 nsga2 : $(OBJS)
@@ -10,7 +10,7 @@ nsga2 : $(OBJS)
 nsga2.o : objectives.h nsga2.cpp
 	$(CC) $(CFLAGS) nsga2.cpp
 
-objectives.o : objectives.h
+objectives.o : objectives.h objectives.cpp
 	$(CC) $(CFLAGS) ${OBJFILE} -o objectives.o
 
 clean :

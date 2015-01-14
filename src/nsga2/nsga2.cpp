@@ -34,6 +34,7 @@
 #define DPRINTLF(LF) printf(#LF " = %.5lf\n", (LF))
 
 using namespace std;
+typedef unsigned int uint;
 typedef long long lld;
 typedef unsigned long long llu;
 
@@ -98,7 +99,7 @@ list<chromosome> find_nondominated_front(vector<chromosome> &P)
 {
     list<chromosome> ret;
     ret.push_back(P[0]);
-    for (int i=1;i<P.size();i++)
+    for (uint i=1;i<P.size();i++)
     {
         chromosome p = P[i];
         bool add_p = true;
@@ -124,8 +125,8 @@ vector<vector<chromosome> > fast_nondominated_sort(vector<chromosome> &P)
         list<chromosome> front = find_nondominated_front(P);
         vector<chromosome> fi(front.begin(), front.end());
         F.push_back(fi);
-        int ii = 0;
-        for (int i=0;i<P.size();i++)
+        uint ii = 0;
+        for (uint i=0;i<P.size();i++)
         {
             if (ii < fi.size() && is_equal(P[i], fi[ii])) ii++;
             else next_P.push_back(P[i]);
@@ -347,10 +348,10 @@ void iterate()
     make_new_pop(main_population);
     vector<vector<chromosome> > fronts = fast_nondominated_sort(main_population);
     int ii = 0;
-    while (main_population.size() + fronts[ii].size() <= pop_size)
+    while (main_population.size() + fronts[ii].size() <= uint(pop_size))
     {
         crowding_distance_assignment(fronts[ii]);
-        for (int j=0;j<fronts[ii].size();j++) fronts[ii][j].rank = ii;
+        for (uint j=0;j<fronts[ii].size();j++) fronts[ii][j].rank = ii;
         main_population.insert(main_population.end(), fronts[ii].begin(), fronts[ii].end());
         ii++;
     }
@@ -358,7 +359,7 @@ void iterate()
     if (elements_needed > 0)
     {
         crowding_distance_assignment(fronts[ii]);
-        for (int j=0;j<fronts[ii].size();j++) fronts[ii][j].rank = ii;
+        for (uint j=0;j<fronts[ii].size();j++) fronts[ii][j].rank = ii;
         sort(fronts[ii].begin(), fronts[ii].end());
         main_population.insert(main_population.end(), fronts[ii].begin(), fronts[ii].begin() + elements_needed);
     }
@@ -366,6 +367,12 @@ void iterate()
 
 int main(int argc, char **argv)
 {
+    if (argc != 2)
+    {
+        printf("Usage: ./nsga2 <input_parameter_file>\n");
+        return -1;
+    }
+    
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     generator = default_random_engine(seed);
     objectives = get_objectives();

@@ -28,6 +28,7 @@
 #define DPRINTLF(LF) printf(#LF " = %.5lf\n", (LF))
 
 using namespace std;
+typedef unsigned int uint;
 typedef long long lld;
 typedef unsigned long long llu;
 
@@ -311,6 +312,6 @@ int main()
     
     vector<int> ret = x -> viterbi(observations);
     
-    for (int i=0;i<ret.size();i++) printf("%d ", ret[i]);
+    for (uint i=0;i<ret.size();i++) printf("%d ", ret[i]);
     printf("\n");
 }
