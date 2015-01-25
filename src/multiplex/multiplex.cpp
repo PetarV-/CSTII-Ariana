@@ -242,3 +242,47 @@ double**** Multiplex::get_communicability_matrix()
     
     return ret;
 }
+
+double** Multiplex::get_aggregate_matrix()
+{
+    double ****G = get_communicability_matrix();
+    
+    double **ret = new double*[n];
+    
+    for (int i=0;i<n;i++)
+    {
+        ret[i] = new double[n];
+        for (int j=0;j<n;j++)
+        {
+            if (i == j) ret[i][j] = 0.0;
+            else
+            {
+                double h_mean_den = 0.0;
+                for (int k=0;k<L;k++)
+                {
+                    for (int l=0;l<L;l++)
+                    {
+                        h_mean_den += 1.0 / G[k][l][i][j];
+                    }
+                }
+                ret[i][j] = (1.0 * L * L) / h_mean_den;
+            }
+        }
+    }
+    
+    for (int i=0;i<L;i++)
+    {
+        for (int j=0;j<L;j++)
+        {
+            for (int k=0;k<n;k++)
+            {
+                delete[] G[i][j][k];
+            }
+            delete[] G[i][j];
+        }
+        delete[] G[i];
+    }
+    delete[] G;
+    
+    return ret;
+}

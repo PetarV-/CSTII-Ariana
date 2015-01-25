@@ -280,7 +280,7 @@ void HMM::baumwelch(vector<int> Y)
     
     P = nextP;
 }
-
+/*
 int main()
 {
     // test
@@ -315,3 +315,4 @@ int main()
     for (uint i=0;i<ret.size();i++) printf("%d ", ret[i]);
     printf("\n");
 }
+*/

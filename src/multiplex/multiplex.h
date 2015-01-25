@@ -27,6 +27,7 @@ public:
     void set_edge(int lyr1, int lyr2, int n1, int n2, double val);
     double** get_matrix_form();
     double**** get_communicability_matrix();
+    double** get_aggregate_matrix();
 };
 
 #endif
