@@ -15,7 +15,7 @@
 #include <map>
 #include <complex>
 
-#include "../../src/matrix_lib/matrix_lib.h"
+#include <matrix_lib.h>
 
 #define DPRINTC(C) printf(#C " = %c\n", (C))
 #define DPRINTS(S) printf(#S " = %s\n", (S))

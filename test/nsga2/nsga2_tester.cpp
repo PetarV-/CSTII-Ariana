@@ -15,7 +15,7 @@
 #include <map>
 #include <complex>
 
-#include "../../src/nsga2/nsga2.h"
+#include <nsga2.h>
 
 #define DPRINTC(C) printf(#C " = %c\n", (C))
 #define DPRINTS(S) printf(#S " = %s\n", (S))

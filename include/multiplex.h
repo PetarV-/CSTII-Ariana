@@ -8,8 +8,8 @@
 
 #include <vector>
 
-#include "../layers/layers.h"
-#include "../hmm/hmm.h"
+#include <layers.h>
+#include <hmm.h>
 
 class Multiplex
 {

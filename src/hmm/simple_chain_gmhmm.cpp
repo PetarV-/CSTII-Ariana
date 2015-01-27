@@ -15,7 +15,7 @@
 #include <map>
 #include <complex>
 
-#include "hmm.h"
+#include <hmm.h>
 
 #define DPRINTC(C) printf(#C " = %c\n", (C))
 #define DPRINTS(S) printf(#S " = %s\n", (S))

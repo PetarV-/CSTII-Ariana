@@ -12,7 +12,7 @@ make &> /dev/null
 for test_name in "${tests[@]}"
 do
 	echo "Testing on $test_name..."
-	./exp_tester "$testin_dir/input_$test_name.in" "$testres_dir/result_$test_name.out" &> /dev/null
+	../../bin/exp_tester "$testin_dir/input_$test_name.in" "$testres_dir/result_$test_name.out" &> /dev/null
 	echo "Testing completed. Output written to test_results/result_$test_name.out"
 done
 

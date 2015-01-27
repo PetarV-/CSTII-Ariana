@@ -17,8 +17,8 @@
 #include <chrono>
 #include <random>
 
-#include "nsga2.h"
-#include "objectives.h"
+#include <nsga2.h>
+#include <objectives.h>
 
 #define EPS 1e-9
 #define INF 987654321

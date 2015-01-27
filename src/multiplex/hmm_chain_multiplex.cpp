@@ -15,7 +15,7 @@
 #include <map>
 #include <complex>
 
-#include "multiplex.h"
+#include <multiplex.h>
 
 #define DPRINTC(C) printf(#C " = %c\n", (C))
 #define DPRINTS(S) printf(#S " = %s\n", (S))

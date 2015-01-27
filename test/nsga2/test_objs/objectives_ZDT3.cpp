@@ -1,7 +1,7 @@
 #include <vector>
 #include <math.h>
 
-#include "objectives.h"
+#include <objectives.h>
 
 using namespace std;
 

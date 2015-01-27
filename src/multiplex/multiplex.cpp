@@ -15,8 +15,8 @@
 #include <map>
 #include <complex>
 
-#include "multiplex.h"
-#include "../matrix_lib/matrix_lib.h"
+#include <multiplex.h>
+#include <matrix_lib.h>
 
 #define DPRINTC(C) printf(#C " = %c\n", (C))
 #define DPRINTS(S) printf(#S " = %s\n", (S))

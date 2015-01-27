@@ -15,7 +15,7 @@
 #include <map>
 #include <complex>
 
-#include "hmm.h"
+#include <hmm.h>
 
 #define EPS 1e-3
 #define LIM 1e-20

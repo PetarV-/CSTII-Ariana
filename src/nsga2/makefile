@@ -1,16 +1,15 @@
 OBJFILE = objectives.cpp
-CC = g++
+CC = g++ -I../../include
 DEBUG = -g
 CFLAGS = -std=c++11 -O3 -Wall -Wextra -Werror -Weffc++ -Wstrict-aliasing --pedantic -c $(DEBUG)
-LFLAGS = -Wall $(DEBUG)
 
-nsga2 : objectives objectives.h nsga2.h nsga2.cpp
-	$(CC) $(CFLAGS) nsga2.cpp
+nsga2 : objectives nsga2.cpp
+	$(CC) $(CFLAGS) nsga2.cpp -o ../../build/nsga2.o
 
-objectives : objectives.h
-	$(CC) $(CFLAGS) ${OBJFILE} -o objectives.o
+objectives : 
+	$(CC) $(CFLAGS) ${OBJFILE} -o ../../build/objectives.o
 
 clean :
-	-rm -f *.o *~ nsga2 &> /dev/null
-	-rm -f *.o *~ objectives &> /dev/null
+	-rm -f ../../build/*.o *~ nsga2 &> /dev/null
+	-rm -f ../../build/*.o *~ objectives &> /dev/null
 

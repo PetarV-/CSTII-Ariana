@@ -1,15 +1,15 @@
-CC = g++
+CC = g++ -I../../include
 DEBUG = -g
 CFLAGS = -std=c++11 -O3 -Wall -Wextra -Werror -Weffc++ -Wstrict-aliasing --pedantic -c $(DEBUG)
 
-hmm : hmm.h hmm.cpp
-	$(CC) $(CFLAGS) hmm.cpp
+hmm : hmm.cpp
+	$(CC) $(CFLAGS) hmm.cpp -o ../../build/hmm.o
 
-simple_chain_gmhmm : hmm.h simple_chain_gmhmm.cpp
-	$(CC) $(CFLAGS) simple_chain_gmhmm.cpp
+simple_chain_gmhmm : simple_chain_gmhmm.cpp
+	$(CC) $(CFLAGS) simple_chain_gmhmm.cpp -o ../../build/simple_chain_gmhmm.o
 
-tdhmm : hmm.h tdhmm.cpp
-	$(CC) $(CFLAGS) tdhmm.cpp
+tdhmm : tdhmm.cpp
+	$(CC) $(CFLAGS) tdhmm.cpp -o ../../build/tdhmm.o
 
 clean :
-	-rm -f *.o *~ hmm &> /dev/null
+	-rm -f ../../build/*.o *~ hmm &> /dev/null

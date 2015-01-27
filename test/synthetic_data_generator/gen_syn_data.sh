@@ -6,8 +6,8 @@ params_dir='parameters'
 
 make clean &> /dev/null
 make syn_gen &> /dev/null
-./syn_gen "$params_dir/$1" "training.out" &> /dev/null
-./syn_gen "$params_dir/$1" "test.out" &> /dev/null
+../../bin/syn_gen "$params_dir/$1" "training.out" &> /dev/null
+../../bin/syn_gen "$params_dir/$1" "test.out" &> /dev/null
 
 echo "Synthetic data generated and written to training.out and test.out."
 
