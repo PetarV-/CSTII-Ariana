@@ -8,7 +8,7 @@ nsga2_tester : $(OBJS)
 	$(CC) $(LFLAGS) $(OBJS) -o ../../bin/nsga2_tester
 
 ../../build/nsga2_tester.o : nsga2_tester.cpp
-	$(CC) $(CFLAGS) nsga2_tester.cpp
+	$(CC) $(CFLAGS) nsga2_tester.cpp -o ../../build/nsga2_tester.o
 
 ../../build/nsga2.o ../../build/objectives.o :
 	$(MAKE) -C ../../src/nsga2 OBJFILE=${OBJFILE}
