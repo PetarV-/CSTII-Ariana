@@ -3,6 +3,6 @@
 
 #include <vector>
 
-bool compare_euclidean(vector<double> &A, vector<double> &B);
+bool compare_euclidean(std::pair<std::vector<double>, int> &A, std::pair<std::vector<double>, int> &B);
 
 #endif

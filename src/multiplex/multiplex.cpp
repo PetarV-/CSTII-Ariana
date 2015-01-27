@@ -82,7 +82,7 @@ Multiplex::Multiplex(int n, int L, double ****A) : n(n), L(L)
     }
 }
 
-Multiplex::Multiplex(int n, vector<AbstractGraphLayer*> lyrs) : n(n), L(lyrs.size())
+Multiplex::Multiplex(int n, vector<AbstractGraphLayer*> &lyrs) : n(n), L(lyrs.size())
 {
     this -> layers.resize(L);
     
@@ -113,7 +113,7 @@ Multiplex::Multiplex(int n, vector<AbstractGraphLayer*> lyrs) : n(n), L(lyrs.siz
 }
 
 
-Multiplex::Multiplex(int n, std::vector<AbstractGraphLayer*> lyrs, double **omega) : n(n), L(lyrs.size())
+Multiplex::Multiplex(int n, vector<AbstractGraphLayer*> &lyrs, double **omega) : n(n), L(lyrs.size())
 {
     this -> layers.resize(L);
     
@@ -147,7 +147,7 @@ Multiplex::Multiplex(int n, std::vector<AbstractGraphLayer*> lyrs, double **omeg
     }
 }
 
-Multiplex::Multiplex(int n, std::vector<AbstractGraphLayer*> lyrs, double ****inter_lyr) : n(n), L(lyrs.size())
+Multiplex::Multiplex(int n, vector<AbstractGraphLayer*> &lyrs, double ****inter_lyr) : n(n), L(lyrs.size())
 {
     this -> layers.resize(L);
     

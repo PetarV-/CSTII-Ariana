@@ -84,7 +84,7 @@ HMM::HMM(int n, int obs, double **T, double **P) : n(n), obs(obs)
     }
 }
 
-void HMM::forward_backward(vector<int> Y)
+void HMM::forward_backward(vector<int> &Y)
 {
     int tlen = Y.size();
         
@@ -168,7 +168,7 @@ void HMM::forward_backward(vector<int> Y)
     }
 }
 
-vector<int> HMM::viterbi(vector<int> Y)
+vector<int> HMM::viterbi(vector<int> &Y)
 {
     int tlen = Y.size();
         
@@ -233,7 +233,7 @@ vector<int> HMM::viterbi(vector<int> Y)
     return ret;
 }
 
-void HMM::baumwelch(vector<int> Y)
+void HMM::baumwelch(vector<int> &Y)
 {
     forward_backward(Y);
         

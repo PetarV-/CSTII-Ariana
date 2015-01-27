@@ -19,6 +19,7 @@
 #include <multiplex.h>
 #include <nsga2.h>
 #include <objectives.h>
+#include <vector_cmp.h>
 
 #define DPRINTC(C) printf(#C " = %c\n", (C))
 #define DPRINTS(S) printf(#S " = %s\n", (S))
@@ -69,7 +70,7 @@ void HMMChainMultiplex::set_omega(double **omega)
     }
 }
 
-void HMMChainMultiplex::train(vector<vector<vector<double> > > train_set)
+void HMMChainMultiplex::train(vector<vector<vector<double> > > &train_set)
 {
     // Train all the layers individually (as before)
     for (int l=0;l<L;l++)
@@ -184,12 +185,12 @@ void HMMChainMultiplex::train(vector<vector<vector<double> > > train_set)
     }
 }
 
-double HMMChainMultiplex::log_likelihood(vector<vector<double> > test_data)
+double HMMChainMultiplex::log_likelihood(vector<vector<double> > &test_data)
 {
     vector<pair<vector<double>, int> > sorted_data;
     sorted_data.resize(obs);
     for (int i=0;i<obs;i++) sorted_data[i] = make_pair(test_data[i], i);
-    sort(sorted_data.begin(), sorted_data.end());
+    sort(sorted_data.begin(), sorted_data.end(), compare_euclidean);
     
     double ret = 0.0;
     

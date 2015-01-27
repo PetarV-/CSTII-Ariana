@@ -75,7 +75,7 @@ double SimpleChainGMHMM::get_probability(int obs_id, double x)
     return gaussian_pdf(x, mu[obs_id], sigma[obs_id]);
 }
 
-void SimpleChainGMHMM::train(vector<vector<double> > train_set)
+void SimpleChainGMHMM::train(vector<vector<double> > &train_set)
 {
     // get means and std. deviations
     for (int i=0;i<obs;i++)
@@ -178,7 +178,7 @@ void SimpleChainGMHMM::train(vector<vector<double> > train_set)
     }
 }
 
-double SimpleChainGMHMM::log_likelihood(vector<double> test_data)
+double SimpleChainGMHMM::log_likelihood(vector<double> &test_data)
 {
     vector<pair<double, int> > sorted_data;
     sorted_data.resize(obs);
