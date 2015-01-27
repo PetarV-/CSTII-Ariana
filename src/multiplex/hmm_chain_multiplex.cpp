@@ -58,6 +58,11 @@ void HMMChainMultiplex::set_omega(double **omega)
     }
 }
 
+void HMMChainMultiplex::omega_train(vector<vector<double> > > train_set)
+{
+    
+}
+
 void HMMChainMultiplex::train(vector<vector<vector<double> > > train_set)
 {
     for (int l=0;l<L;l++)

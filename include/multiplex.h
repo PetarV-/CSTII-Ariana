@@ -42,6 +42,7 @@ public:
     HMMChainMultiplex(int obs, int L);
     
     void set_omega(double **omega);
+    void omega_train(std::vector<std::vector<std::vector<double> > > train_set);
     void train(std::vector<std::vector<std::vector<double> > > train_set);
     double log_likelihood(std::vector<std::vector<double> > test_data);
 };

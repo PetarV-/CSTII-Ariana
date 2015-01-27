@@ -1,5 +1,6 @@
-#include <vector>
 #include <math.h>
+#include <functional>
+#include <vector>
 
 #include <objectives.h>
 
@@ -19,10 +20,10 @@ double ZDT6_F2(vector<double> X)
     return gX * (1.0 - (v/gX) * (v/gX));
 }
 
-vector<pfunc_t> get_objectives()
+vector<function<double(vector<double>)> > get_objectives()
 {
-    vector<pfunc_t> ret;
-    ret.push_back(&ZDT6_F1);
-    ret.push_back(&ZDT6_F2);
+    vector<function<double(vector<double>)> > ret;
+    ret.push_back(ZDT6_F1);
+    ret.push_back(ZDT6_F2);
     return ret;
 }

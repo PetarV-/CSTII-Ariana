@@ -1,3 +1,4 @@
+#include <functional>
 #include <vector>
 
 #include <objectives.h>
@@ -14,10 +15,10 @@ double SCH_F2(vector<double> X)
     return (X[0] - 2) * (X[0] - 2);
 }
 
-vector<pfunc_t> get_objectives()
+vector<function<double(vector<double>)> > get_objectives()
 {
-    vector<pfunc_t> ret;
-    ret.push_back(&SCH_F1);
-    ret.push_back(&SCH_F2);
+    vector<function<double(vector<double>)> > ret;
+    ret.push_back(SCH_F1);
+    ret.push_back(SCH_F2);
     return ret;
 }

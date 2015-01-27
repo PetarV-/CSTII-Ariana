@@ -50,7 +50,7 @@ uniform_int_distribution<int> rand_index;
 uniform_real_distribution<double> rand_real(0.0, 1.0);
 
 vector<pair<double, double> > var_lims;
-vector<pfunc_t> objectives;
+vector<function<double(vector<double>)> > objectives;
 
 vector<chromosome> main_population;
 
