@@ -32,7 +32,7 @@ typedef unsigned int uint;
 typedef long long lld;
 typedef unsigned long long llu;
 
-HMMChainMultiplex* toplevel;
+static HMMChainMultiplex *toplevel;
 
 HMMChainMultiplex::HMMChainMultiplex(int obs, int L) : obs(obs), L(L)
 {

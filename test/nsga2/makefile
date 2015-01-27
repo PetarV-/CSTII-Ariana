@@ -10,10 +10,13 @@ nsga2_tester : $(OBJS)
 ../../build/nsga2_tester.o : nsga2_tester.cpp
 	$(CC) $(CFLAGS) nsga2_tester.cpp -o ../../build/nsga2_tester.o
 
-../../build/nsga2.o ../../build/objectives.o :
-	$(MAKE) -C ../../src/nsga2 OBJFILE=${OBJFILE}
+../../build/nsga2.o : 
+	$(MAKE) -C ../../src/nsga2
+
+../../build/objectives.o :
+	$(MAKE) -C ../../src/objectives OBJFILE=${OBJFILE}
 
 clean :
 	-rm -f ../../build/*.o *~ ../../bin/nsga2_tester &> /dev/null
 	$(MAKE) -C ../../src/nsga2 clean
-
+	$(MAKE) -C ../../src/objectives clean

@@ -40,22 +40,23 @@ typedef unsigned long long llu;
 
 int main(int argc, char **argv)
 {
-    if (argc != 4)
+    if (argc != 5)
     {
-        printf("Usage: ./ariana_chain_multiplex <gene_count> <training_file> <test_file>\n");
+        printf("Usage: ./ariana_chain_multiplex <gene_count> <type_count> <training_file> <test_file>\n");
         return -1;
     }
 
     int gene_count = atoi(argv[1]);
-    FILE *f_train = fopen(argv[2], "r");
-    FILE *f_test = fopen(argv[3], "r");
+    int type_count = atoi(argv[2]);
+    FILE *f_train = fopen(argv[3], "r");
+    FILE *f_test = fopen(argv[4], "r");
     
     printf("Importing training data...\n");
     
     int num_train;
     fscanf(f_train, "%d", &num_train);
     
-    vector<vector<double> > train_patient, train_normal;
+    vector<vector<vector<double> > > train_patient, train_normal;
     int patient_cnt = 0, normal_cnt = 0;
     
     for (int i=0;i<num_train;i++)
@@ -64,19 +65,29 @@ int main(int argc, char **argv)
         fscanf(f_train, "%s", status);
         if (strcmp(status, "patient") == 0)
         {
-            train_patient.push_back(vector<double>(gene_count));
-            for (int j=0;j<gene_count;j++)
+            train_patient.push_back(vector<vector<double> >(gene_count));
+            train_patient[patient_cnt].resize(gene_count);
+            for (int j=0;j<gene_count;j++) train_patient[patient_cnt][j].resize(type_count);
+            for (int k=0;k<type_count;k++)
             {
-                fscanf(f_train, "%lf", &train_patient[patient_cnt][j]);
+                for (int j=0;j<gene_count;j++)
+                {
+                    fscanf(f_train, "%lf", &train_patient[patient_cnt][j][k]);
+                }
             }
             patient_cnt++;
         }
         else if (strcmp(status, "normal") == 0)
         {
-            train_normal.push_back(vector<double>(gene_count));
-            for (int j=0;j<gene_count;j++)
+            train_normal.push_back(vector<vector<double> >(gene_count));
+            train_normal[normal_cnt].resize(gene_count);
+            for (int j=0;j<gene_count;j++) train_normal[normal_cnt][j].resize(type_count);
+            for (int k=0;k<type_count;k++)
             {
-                fscanf(f_train, "%lf", &train_normal[normal_cnt][j]);
+                for (int j=0;j<gene_count;j++)
+                {
+                    fscanf(f_train, "%lf", &train_normal[normal_cnt][j][k]);
+                }
             }
             normal_cnt++;
         }
@@ -86,8 +97,8 @@ int main(int argc, char **argv)
     
     printf("Training the models...\n");
     
-    SimpleChainGMHMM *patient_model = new SimpleChainGMHMM(gene_count);
-    SimpleChainGMHMM *normal_model = new SimpleChainGMHMM(gene_count);
+    HMMChainMultiplex *patient_model = new HMMChainMultiplex(gene_count, type_count);
+    HMMChainMultiplex *normal_model = new HMMChainMultiplex(gene_count, type_count);
     
     patient_model -> train(train_patient);
     normal_model -> train(train_normal);
@@ -109,16 +120,20 @@ int main(int argc, char **argv)
         
         char status[10];
         bool expected_inference;
-        vector<double> test_vector;
+        vector<vector<double> > test_vector;
         test_vector.resize(gene_count);
+        for (int j=0;j<gene_count;j++) test_vector[j].resize(type_count);
         
         fscanf(f_test, "%s", status);
         if (strcmp(status, "patient") == 0) expected_inference = true;
         else if (strcmp(status, "normal") == 0) expected_inference = false;
         
-        for (int j=0;j<gene_count;j++)
+        for (int k=0;k<type_count;k++)
         {
-            fscanf(f_test, "%lf", &test_vector[j]);
+            for (int j=0;j<gene_count;j++)
+            {
+                fscanf(f_test, "%lf", &test_vector[j][k]);
+            }
         }
         
         double lhood1 = patient_model -> log_likelihood(test_vector);
