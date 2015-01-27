@@ -57,7 +57,7 @@ int main(int argc, char **argv)
         for (int i=0;i<get_obj_size();i++) fprintf(g, (i == get_obj_size() - 1) ? "%lf)\n" : "%lf, ", cur.values[i]);
     }
     
-    printf("Pareto front extracted. Results saved in results.out.\n");
+    printf("Pareto front extracted. Results saved in %s.\n", argv[2]);
     
     fclose(g);
     
