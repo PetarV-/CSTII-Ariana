@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "../layers/layers.h"
+#include "../hmm/hmm.h"
 
 class Multiplex
 {
@@ -28,6 +29,21 @@ public:
     double** get_matrix_form();
     double**** get_communicability_matrix();
     double** get_aggregate_matrix();
+};
+
+class HMMChainMultiplex
+{
+private:
+    int obs;
+    int L;
+    std::vector<SimpleChainGMHMM*> layers;
+    double **omega;
+public:
+    HMMChainMultiplex(int obs, int L);
+    
+    void set_omega(double **omega);
+    void train(std::vector<std::vector<std::vector<double> > > train_set);
+    double log_likelihood(std::vector<std::vector<double> > test_data);
 };
 
 #endif

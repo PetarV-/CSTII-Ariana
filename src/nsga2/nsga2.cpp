@@ -1,8 +1,3 @@
-/*
- Petar 'PetarV' Velickovic
- Algorithm: NSGA-II
-*/
-
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
@@ -22,6 +17,7 @@
 #include <chrono>
 #include <random>
 
+#include "nsga2.h"
 #include "objectives.h"
 
 #define EPS 1e-9
@@ -54,21 +50,6 @@ uniform_real_distribution<double> rand_real(0.0, 1.0);
 
 vector<pair<double, double> > var_lims;
 vector<pfunc_t> objectives;
-
-struct chromosome
-{
-    int rank;
-    double distance;
-    int sort_key; // for sorting purposes
-    vector<double> features;
-    vector<double> values;
-    
-    bool operator <(const chromosome &c) const
-    {
-        if (rank != c.rank) return (rank < c.rank);
-        else return (distance > c.distance);
-    }
-};
 
 vector<chromosome> main_population;
 
@@ -365,19 +346,13 @@ void iterate()
     }
 }
 
-int main(int argc, char **argv)
+vector<chromosome> run(char *input_parameter_file)
 {
-    if (argc != 2)
-    {
-        printf("Usage: ./nsga2 <input_parameter_file>\n");
-        return -1;
-    }
-    
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     generator = default_random_engine(seed);
     objectives = get_objectives();
     
-    FILE *f = fopen(argv[1], "r");
+    FILE *f = fopen(input_parameter_file, "r");
     
     fscanf(f, "%d", &pop_size);
     fscanf(f, "%d", &ft_size);
@@ -408,28 +383,44 @@ int main(int argc, char **argv)
     
     printf("Done.\n");
     
-    printf("Extracting Pareto front...\n");
+    fclose(f);
     
-    FILE *g = fopen("results.out", "w");
+    return main_population;
     
-    fprintf(g, "Pareto front:\n");
+    /*
+     printf("Extracting Pareto front...\n");
     
-    int ii = 0;
+     FILE *g = fopen("results.out", "w");
     
-    list<chromosome> pareto_front = find_nondominated_front(main_population);
+     fprintf(g, "Pareto front:\n");
     
-    for (list<chromosome>::iterator it = pareto_front.begin(); it != pareto_front.end(); it++)
+     int ii = 0;
+    
+     list<chromosome> pareto_front = find_nondominated_front(main_population);
+    
+     for (list<chromosome>::iterator it = pareto_front.begin(); it != pareto_front.end(); it++)
+     {
+         chromosome cur = (*it);
+         fprintf(g, "Chromosome id %d: (", ii++);
+         for (int i=0;i<ft_size;i++) fprintf(g, (i == ft_size - 1) ? "%lf) -> (" : "%lf, ", cur.features[i]);
+         for (int i=0;i<obj_size;i++) fprintf(g, (i == obj_size - 1) ? "%lf)\n" : "%lf, ", cur.values[i]);
+     }
+    
+     printf("Pareto front extracted. Results saved in results.out.\n");
+    
+     fclose(g);
+    */
+}
+
+int main(int argc, char **argv)
+{
+    if (argc != 2)
     {
-        chromosome cur = (*it);
-        fprintf(g, "Chromosome id %d: (", ii++);
-        for (int i=0;i<ft_size;i++) fprintf(g, (i == ft_size - 1) ? "%lf) -> (" : "%lf, ", cur.features[i]);
-        for (int i=0;i<obj_size;i++) fprintf(g, (i == obj_size - 1) ? "%lf)\n" : "%lf, ", cur.values[i]);
+        printf("Usage: ./nsga2 <input_parameter_file>\n");
+        return -1;
     }
     
-    printf("Pareto front extracted. Results saved in results.out.\n");
-    
-    fclose(f);
-    fclose(g);
+    run(argv[1]);
     
     return 0;
 }
