@@ -44,6 +44,7 @@ double p_mutation;
 double di_crossover;
 double di_mutation;
 
+
 default_random_engine generator;
 uniform_int_distribution<int> rand_index;
 uniform_real_distribution<double> rand_real(0.0, 1.0);
@@ -74,6 +75,16 @@ bool dominated_by(chromosome &X, chromosome &Y)
         if (X.values[i] > Y.values[i]) return false;
     }
     return true;
+}
+
+int get_ft_size()
+{
+    return ft_size;
+}
+
+int get_obj_size()
+{
+    return obj_size;
 }
 
 list<chromosome> find_nondominated_front(vector<chromosome> &P)
@@ -346,7 +357,7 @@ void iterate()
     }
 }
 
-vector<chromosome> run(char *input_parameter_file)
+vector<chromosome> optimise(char *input_parameter_file)
 {
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     generator = default_random_engine(seed);
@@ -386,41 +397,4 @@ vector<chromosome> run(char *input_parameter_file)
     fclose(f);
     
     return main_population;
-    
-    /*
-     printf("Extracting Pareto front...\n");
-    
-     FILE *g = fopen("results.out", "w");
-    
-     fprintf(g, "Pareto front:\n");
-    
-     int ii = 0;
-    
-     list<chromosome> pareto_front = find_nondominated_front(main_population);
-    
-     for (list<chromosome>::iterator it = pareto_front.begin(); it != pareto_front.end(); it++)
-     {
-         chromosome cur = (*it);
-         fprintf(g, "Chromosome id %d: (", ii++);
-         for (int i=0;i<ft_size;i++) fprintf(g, (i == ft_size - 1) ? "%lf) -> (" : "%lf, ", cur.features[i]);
-         for (int i=0;i<obj_size;i++) fprintf(g, (i == obj_size - 1) ? "%lf)\n" : "%lf, ", cur.values[i]);
-     }
-    
-     printf("Pareto front extracted. Results saved in results.out.\n");
-    
-     fclose(g);
-    */
-}
-
-int main(int argc, char **argv)
-{
-    if (argc != 2)
-    {
-        printf("Usage: ./nsga2 <input_parameter_file>\n");
-        return -1;
-    }
-    
-    run(argv[1]);
-    
-    return 0;
 }

@@ -29,9 +29,9 @@ typedef unsigned long long llu;
 
 int main(int argc, char **argv)
 {
-    if (argc != 2)
+    if (argc != 3)
     {
-        printf("Usage: ./syn_gen <input_parameters>\n");
+        printf("Usage: ./syn_gen <input_parameters> <output_file>\n");
         return -1;
     }
     
@@ -39,7 +39,7 @@ int main(int argc, char **argv)
     default_random_engine generator(seed);
     
     FILE *f = fopen(argv[1], "r");
-    FILE *g = fopen("synthetic.out", "w");
+    FILE *g = fopen(argv[2], "w");
     
     int n, labels, len;
     
@@ -80,7 +80,7 @@ int main(int argc, char **argv)
     fclose(f);
     fclose(g);
     
-    printf("Done. Synthetic data written to synthetic.out.\n");
+    printf("Done. Synthetic data written to %s.\n", argv[2]);
     
     return 0;
 }

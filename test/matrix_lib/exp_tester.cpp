@@ -29,9 +29,9 @@ typedef unsigned long long llu;
 
 int main(int argc, char **argv)
 {
-    if (argc != 2)
+    if (argc != 3)
     {
-        printf("Usage: ./exp_tester <input_matrix_file>\n");
+        printf("Usage: ./exp_tester <input_matrix_file> <output_file>\n");
         return -1;
     }
     
@@ -53,7 +53,7 @@ int main(int argc, char **argv)
         }
     }
     
-    FILE *g = fopen("exp_result.out", "w");
+    FILE *g = fopen(argv[2], "w");
     
     fprintf(g, "EXP(M) = \n");
     double **fin = mat_exp(mat, len);
@@ -69,7 +69,7 @@ int main(int argc, char **argv)
     fclose(f);
     fclose(g);
     
-    printf("Done. Matrix exponential written to exp_result.out.\n");
+    printf("Done. Matrix exponential written to %s.\n", argv[2]);
     
     return 0;
 }

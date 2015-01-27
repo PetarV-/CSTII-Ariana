@@ -3,48 +3,18 @@
  Algorithm: NSGA-II
 */
 
-#include <stdio.h>
-#include <math.h>
-#include <string.h>
-#include <time.h>
-#include <assert.h>
-#include <iostream>
+#ifndef NSGAII
+#define NSGAII
+
 #include <vector>
-#include <list>
-#include <string>
-#include <algorithm>
-#include <deque>
-#include <queue>
-#include <stack>
-#include <set>
-#include <map>
-#include <complex>
-#include <chrono>
-#include <random>
-
-#include "objectives.h"
-
-#define EPS 1e-9
-#define INF 987654321
-
-#define DPRINTC(C) printf(#C " = %c\n", (C))
-#define DPRINTS(S) printf(#S " = %s\n", (S))
-#define DPRINTD(D) printf(#D " = %d\n", (D))
-#define DPRINTLLD(LLD) printf(#LLD " = %lld\n", (LLD))
-#define DPRINTLF(LF) printf(#LF " = %.5lf\n", (LF))
-
-using namespace std;
-typedef unsigned int uint;
-typedef long long lld;
-typedef unsigned long long llu;
 
 struct chromosome
 {
     int rank;
     double distance;
     int sort_key; // for sorting purposes
-    vector<double> features;
-    vector<double> values;
+    std::vector<double> features;
+    std::vector<double> values;
     
     bool operator <(const chromosome &c) const
     {
@@ -53,10 +23,15 @@ struct chromosome
     }
 };
 
-list<chromosome> find_nondominated_front(vector<chromosome> &P);
+int get_ft_size();
+int get_obj_size();
 
-vector<vector<chromosome> > fast_nondominated_sort(vector<chromosome> &P);
+std::list<chromosome> find_nondominated_front(std::vector<chromosome> &P);
 
-void crowding_distance_assignment(vector<chromosome> &I);
+std::vector<std::vector<chromosome> > fast_nondominated_sort(std::vector<chromosome> &P);
 
-vector<chromosome> run(char *input_parameter_file);
+void crowding_distance_assignment(std::vector<chromosome> &I);
+
+std::vector<chromosome> optimise(char *input_parameter_file);
+
+#endif

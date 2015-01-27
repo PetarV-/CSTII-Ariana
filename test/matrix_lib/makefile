@@ -9,7 +9,7 @@ exp_tester : $(OBJS)
 exp_tester.o : matrix_lib.h exp_tester.cpp
 	$(CC) $(CFLAGS) exp_tester.cpp
 
-matrix_lib.o :
+../../src/matrix_lib/matrix_lib.o :
 	$(MAKE) -C ../../src/matrix_lib
 
 clean :

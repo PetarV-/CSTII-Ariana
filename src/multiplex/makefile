@@ -10,10 +10,10 @@ multiplex : $(OBJS)
 multiplex.o : multiplex.h multiplex.cpp
 	$(CC) $(CFLAGS) multiplex.cpp
 
-layers.o :
+../layers/layers.o :
 	$(MAKE) -C ../layers
 
-matrix_lib.o :
+../matrix_lib/matrix_lib.o :
 	$(MAKE) -C ../matrix_lib
 
 clean :
