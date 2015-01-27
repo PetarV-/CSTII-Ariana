@@ -41,6 +41,8 @@ public:
     SimpleChainGMHMM(int obs);
     SimpleChainGMHMM(int obs, double **G, double *mu, double *sigma);
     
+    double get_G(int x, int y);
+    double get_probability(int obs_id, double x);
     void train(std::vector<std::vector<double> > train_set);
     double log_likelihood(std::vector<double> test_data);
 };

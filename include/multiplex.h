@@ -6,6 +6,7 @@
 #ifndef MULTIPLEX
 #define MULTIPLEX
 
+#include <functional>
 #include <vector>
 
 #include <layers.h>
@@ -38,13 +39,16 @@ private:
     int L;
     std::vector<SimpleChainGMHMM*> layers;
     double **omega;
+    
+    std::vector<std::function<double(std::vector<double>)> > objectives;
 public:
     HMMChainMultiplex(int obs, int L);
     
     void set_omega(double **omega);
-    void omega_train(std::vector<std::vector<std::vector<double> > > train_set);
     void train(std::vector<std::vector<std::vector<double> > > train_set);
     double log_likelihood(std::vector<std::vector<double> > test_data);
+    
+    std::vector<std::function<double(std::vector<double>)> > extract_objectives();
 };
 
 #endif

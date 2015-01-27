@@ -65,6 +65,16 @@ double gaussian_pdf(double x, double mean, double stdev)
     return ret / (stdev * sqrt(2 * M_PI));
 }
 
+double SimpleChainGMHMM::get_G(int x, int y)
+{
+    return G[x][y];
+}
+
+double SimpleChainGMHMM::get_probability(int obs_id, double x)
+{
+    return gaussian_pdf(x, mu[obs_id], sigma[obs_id]);
+}
+
 void SimpleChainGMHMM::train(vector<vector<double> > train_set)
 {
     // get means and std. deviations
@@ -180,7 +190,7 @@ double SimpleChainGMHMM::log_likelihood(vector<double> test_data)
     {
         double curr_val = sorted_data[i].first;
         int curr_gene = sorted_data[i].second;
-        ret += log(G[i][curr_gene]) + log(gaussian_pdf(curr_val, mu[curr_gene], sigma[curr_gene]));
+        ret += log(G[i][curr_gene]) + log(get_probability(curr_gene, curr_val));
     }
     
     return ret;
