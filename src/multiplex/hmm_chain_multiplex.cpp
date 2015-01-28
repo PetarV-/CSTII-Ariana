@@ -91,7 +91,7 @@ void HMMChainMultiplex::train(vector<vector<vector<double> > > &train_set)
     objectives.resize(train_set.size());
     for (uint t=0;t<train_set.size();t++)
     {
-        objectives[t] = [this, &t, &train_set] (vector<double> X) -> double
+        objectives[t] = [this, t, &train_set] (vector<double> X) -> double
         {
             double **temp_omega = new double*[L];
             for (int i=0;i<L;i++)

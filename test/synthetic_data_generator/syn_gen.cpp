@@ -29,17 +29,18 @@ typedef unsigned long long llu;
 
 int main(int argc, char **argv)
 {
-    if (argc != 3)
+    if (argc != 4)
     {
-        printf("Usage: ./syn_gen <input_parameters> <output_file>\n");
+        printf("Usage: ./syn_gen <type_count> <input_parameters> <output_file>\n");
         return -1;
     }
     
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     default_random_engine generator(seed);
     
-    FILE *f = fopen(argv[1], "r");
-    FILE *g = fopen(argv[2], "w");
+    int types = atoi(argv[1]);
+    FILE *f = fopen(argv[2], "r");
+    FILE *g = fopen(argv[3], "w");
     
     int n, labels, len;
     
@@ -55,25 +56,33 @@ int main(int argc, char **argv)
     
         fscanf(f, "%s", label);
     
-        normal_distribution<double> *N = new normal_distribution<double>[len];
-    
-        for (int i=0;i<len;i++)
+        normal_distribution<double> **N = new normal_distribution<double>*[types];
+        
+        for (int t=0;t<types;t++)
         {
-            double mean, stddev;
-            fscanf(f, "%lf%lf", &mean, &stddev);
-            N[i] = normal_distribution<double>(mean, stddev);
+            N[t] = new normal_distribution<double>[len];
+            for (int i=0;i<len;i++)
+            {
+                double mean, stddev;
+                fscanf(f, "%lf%lf", &mean, &stddev);
+                N[t][i] = normal_distribution<double>(mean, stddev);
+            }
         }
     
         for (int i=0;i<n;i++)
         {
             fprintf(g, "%s ", label);
-            for (int j=0;j<len;j++)
+            for (int t=0;t<types;t++)
             {
-                fprintf(g, "%lf ", N[j](generator));
+                for (int j=0;j<len;j++)
+                {
+                    fprintf(g, "%lf ", N[t][j](generator));
+                }
             }
             fprintf(g, "\n");
         }
         
+        for (int t=0;t<types;t++) delete[] N[t];
         delete[] N;
     }
     

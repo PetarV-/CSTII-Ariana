@@ -42,7 +42,7 @@ int main(int argc, char **argv)
 {
     if (argc != 5)
     {
-        printf("Usage: ./ariana_chain_multiplex <gene_count> <type_count> <training_file> <test_file>\n");
+        printf("Usage: ./ariana_multiplex_chain <gene_count> <type_count> <training_file> <test_file>\n");
         return -1;
     }
 
