@@ -53,6 +53,12 @@ SimpleGraphLayer::SimpleGraphLayer(int n, double **A) : n(n)
     }
 }
 
+SimpleGraphLayer::~SimpleGraphLayer()
+{
+    for (int i=0;i<n;i++) delete[] G[i];
+    delete[] G;
+}
+
 int SimpleGraphLayer::get_n()
 {
     return n;

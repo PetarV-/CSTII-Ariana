@@ -30,7 +30,7 @@ build/vector_cmp.o :
 	$(MAKE) -C src/vector_cmp/ vector_cmp
 
 clean :
-	-rm -f build/*.o src/*~ bin/ariana_single_chain &> /dev/null
+	-rm -f build/*.o src/*~ bin/* &> /dev/null
 	$(MAKE) -C src/hmm/ clean
 	$(MAKE) -C src/layers/ clean
 	$(MAKE) -C src/matrix_lib/ clean

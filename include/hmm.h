@@ -24,7 +24,8 @@ protected:
 public:
     HMM(int n, int obs);
     HMM(int n, int obs, double **T, double **P);
-
+    ~HMM();
+    
     void forward_backward(std::vector<int> &Y);
     std::vector<int> viterbi(std::vector<int> &Y);
     void baumwelch(std::vector<int> &Y);
@@ -40,6 +41,7 @@ private:
 public:
     SimpleChainGMHMM(int obs);
     SimpleChainGMHMM(int obs, double **G, double *mu, double *sigma);
+    ~SimpleChainGMHMM();
     
     double get_G(int x, int y);
     double get_probability(int obs_id, double x);
@@ -56,6 +58,7 @@ private:
     double **dim_obs; // observation probabilities of each dimension (k x obs)
 public:
     tdHMM(int n, int k, int obs, double *P, double **A, double **B);
+    ~tdHMM();
 };
 
 #endif

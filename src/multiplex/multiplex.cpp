@@ -177,6 +177,21 @@ Multiplex::Multiplex(int n, vector<AbstractGraphLayer*> &lyrs, double ****inter_
     }
 }
 
+Multiplex::~Multiplex()
+{
+    for (int i=0;i<L;i++) delete layers[i];
+    for (int i=0;i<L;i++)
+    {
+        for (int j=0;j<L;j++)
+        {
+            for (int k=0;k<n;k++) delete[] M[i][j][k];
+            delete[] M[i][j];
+        }
+        delete[] M[i];
+    }
+    delete[] M;
+}
+
 double Multiplex::get_edge(int lyr1, int lyr2, int n1, int n2)
 {
     return M[lyr1][lyr2][n1][n2];

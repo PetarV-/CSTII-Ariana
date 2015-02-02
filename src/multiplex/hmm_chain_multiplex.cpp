@@ -53,6 +53,13 @@ HMMChainMultiplex::HMMChainMultiplex(int obs, int L) : obs(obs), L(L)
     }
 }
 
+HMMChainMultiplex::~HMMChainMultiplex()
+{
+    for (int i=0;i<L;i++) delete layers[i];
+    for (int i=0;i<L;i++) delete[] omega[i];
+    delete[] omega;
+}
+
 void HMMChainMultiplex::set_omega(double **omega)
 {
     for (int i=0;i<L;i++)

@@ -84,6 +84,18 @@ HMM::HMM(int n, int obs, double **T, double **P) : n(n), obs(obs)
     }
 }
 
+HMM::~HMM()
+{
+    for (int i=0;i<n;i++) delete[] T[i];
+    delete[] T;
+    
+    for (int i=0;i<n;i++) delete[] P[i];
+    delete[] P;
+    
+    delete[] Arn;
+    delete[] Brn;
+}
+
 void HMM::forward_backward(vector<int> &Y)
 {
     int tlen = Y.size();

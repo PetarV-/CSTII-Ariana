@@ -9,6 +9,7 @@
 class AbstractGraphLayer
 {
 public:
+    virtual ~AbstractGraphLayer() { }
     virtual int get_n() = 0;
     virtual double get_adj(int x, int y) = 0;
     virtual void set_adj(int x, int y, double val) = 0;
@@ -22,6 +23,8 @@ private:
 public:
     SimpleGraphLayer(int n);
     SimpleGraphLayer(int n, double **A);
+    ~SimpleGraphLayer();
+    
     int get_n();
     double get_adj(int x, int y);
     void set_adj(int x, int y, double val);

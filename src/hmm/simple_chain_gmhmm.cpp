@@ -56,6 +56,14 @@ SimpleChainGMHMM::SimpleChainGMHMM(int obs, double **G, double *mu, double *sigm
     for (int i=0;i<obs;i++) this -> sigma[i] = sigma[i];
 }
 
+SimpleChainGMHMM::~SimpleChainGMHMM()
+{
+    for (int i=0;i<obs;i++) delete[] G[i];
+    delete[] G;
+    delete[] mu;
+    delete[] sigma;
+}
+
 double gaussian_pdf(double x, double mean, double stdev)
 {
     double E = x - mean;

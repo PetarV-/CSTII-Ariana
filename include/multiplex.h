@@ -25,6 +25,8 @@ public:
     Multiplex(int n, std::vector<AbstractGraphLayer*> &lyrs);
     Multiplex(int n, std::vector<AbstractGraphLayer*> &lyrs, double **omega);
     Multiplex(int n, std::vector<AbstractGraphLayer*> &lyrs, double ****inter_lyr);
+    ~Multiplex();
+    
     double get_edge(int lyr1, int lyr2, int n1, int n2);
     void set_edge(int lyr1, int lyr2, int n1, int n2, double val);
     double** get_matrix_form();
@@ -43,6 +45,7 @@ private:
     std::vector<std::function<double(std::vector<double>)> > objectives;
 public:
     HMMChainMultiplex(int obs, int L);
+    ~HMMChainMultiplex();
     
     void set_omega(double **omega);
     void train(std::vector<std::vector<std::vector<double> > > &train_set);
