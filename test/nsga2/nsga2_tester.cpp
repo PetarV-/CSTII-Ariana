@@ -57,6 +57,16 @@ int main(int argc, char **argv)
         for (int i=0;i<get_obj_size();i++) fprintf(g, (i == get_obj_size() - 1) ? "%lf)\n" : "%lf, ", cur.values[i]);
     }
     
+    fprintf(g, "===========================\n");
+    
+    for (uint jj=ii;jj<final_generation.size();jj++)
+    {
+        chromosome cur = final_generation[jj];
+        fprintf(g, "Chromosome id %d: (", jj++);
+        for (int i=0;i<get_ft_size();i++) fprintf(g, (i == get_ft_size() - 1) ? "%lf) -> (" : "%lf, ", cur.features[i]);
+        for (int i=0;i<get_obj_size();i++) fprintf(g, (i == get_obj_size() - 1) ? "%lf)\n" : "%lf, ", cur.values[i]);
+    }
+    
     printf("Pareto front extracted. Results saved in %s.\n", argv[2]);
     
     fclose(g);
