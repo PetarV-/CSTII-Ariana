@@ -13,6 +13,7 @@ public:
     virtual ~Classifier() { }
     virtual void train(std::vector<std::pair<Data, Label> > &training_set) = 0;
     virtual Label classify(Data &test_data) = 0;
+    virtual std::vector<std::pair<double, Label> > get_thresholds() = 0;
 };
 
 class SingleChainClassifier : public Classifier<std::vector<std::vector<double> >, bool>

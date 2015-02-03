@@ -21,48 +21,14 @@ struct run_result
     double mcc;
     double f1_score;
     
-    std::vector<std::pair<double, bool> > likelihood_diffs;
+    std::vector<std::pair<double, double> > roc_points;
+    double roc_auc;
 };
 
-template<typename Data, typename Label>
-class Classifier
-{
-public:
-    virtual ~Classifier() { }
-    virtual void train(std::vector<std::pair<Data, Label> > &training_set) = 0;
-    virtual Label classify(Data &test_data) = 0;
-};
+run_result single_run(Classifier<std::vector<std::vector<double> >, bool> *C, std::vector<std::pair<std::vector<std::vector<double> >, bool> > &training_set, std::vector<std::pair<std::vector<std::vector<double> >, bool> > &test_set);
 
-class SingleChainClassifier : public Classifier<std::vector<std::vector<double> >, bool>
-{
-private:
-    int gene_count;
-    int param_id;
-    SimpleChainGMHMM* patient_model;
-    SimpleChainGMHMM* normal_model;
-    
-public:
-    SingleChainClassifier(int gene_count, int param_id = 0);
-    ~SingleChainClassifier();
-    
-    void train(std::vector<std::pair<std::vector<std::vector<double> >, bool> > &training_set);
-    bool classify(std::vector<std::vector<double> > &test_data);
-};
+run_result crossvalidate(Classifier<std::vector<std::vector<double> >, bool> *C, std::vector<std::pair<std::vector<std::vector<double> >, bool> > &training_set, int folds = 10);
 
-class MultiplexChainClassifier : public Classifier<std::vector<std::vector<double> >, bool>
-{
-private:
-    int gene_count;
-    int type_count;
-    HMMChainMultiplex* patient_model;
-    HMMChainMultiplex* normal_model;
-    
-public:
-    MultiplexChainClassifier(int gene_count, int type_count);
-    ~MultiplexChainClassifier();
-    
-    void train(std::vector<std::pair<std::vector<std::vector<double> >, bool> > &training_set);
-    bool classify(std::vector<std::vector<double> > &test_data);
-};
+std::vector<std::pair<std::vector<std::vector<double> >, bool> > extract_data(char* filename);
 
 #endif
