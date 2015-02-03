@@ -33,6 +33,7 @@ SingleChainClassifier::SingleChainClassifier(int gene_count, int param_id) : gen
 {
     patient_model = new SimpleChainGMHMM(gene_count);
     normal_model = new SimpleChainGMHMM(gene_count);
+    thresholds.clear();
 }
 
 SingleChainClassifier::~SingleChainClassifier()
@@ -70,6 +71,8 @@ void SingleChainClassifier::train(vector<pair<vector<vector<double> >, bool> > &
     
     patient_model -> train(train_patient);
     normal_model -> train(train_normal);
+    
+    thresholds.clear();
 }
 
 bool SingleChainClassifier::classify(vector<vector<double> > &test_data)
@@ -81,5 +84,12 @@ bool SingleChainClassifier::classify(vector<vector<double> > &test_data)
     double lhood1 = patient_model -> log_likelihood(extracted_subvec);
     double lhood0 = normal_model -> log_likelihood(extracted_subvec);
     
+    thresholds.push_back(make_pair(lhood1 - lhood0, (lhood1 > lhood0)));
+    
     return (lhood1 > lhood0);
+}
+
+vector<pair<double, bool> > SingleChainClassifier::get_thresholds()
+{
+    return thresholds;
 }

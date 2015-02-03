@@ -33,6 +33,7 @@ MultiplexChainClassifier::MultiplexChainClassifier(int gene_count, int type_coun
 {
     patient_model = new HMMChainMultiplex(gene_count, type_count);
     normal_model = new HMMChainMultiplex(gene_count, type_count);
+    thresholds.clear();
 }
 
 MultiplexChainClassifier::~MultiplexChainClassifier()
@@ -80,6 +81,8 @@ void MultiplexChainClassifier::train(vector<pair<vector<vector<double> >, bool> 
     
     patient_model -> train(train_patient);
     normal_model -> train(train_normal);
+    
+    thresholds.clear();
 }
 
 bool MultiplexChainClassifier::classify(vector<vector<double> > &test_data)
@@ -87,5 +90,12 @@ bool MultiplexChainClassifier::classify(vector<vector<double> > &test_data)
     double lhood1 = patient_model -> log_likelihood(test_data);
     double lhood0 = normal_model -> log_likelihood(test_data);
     
+    thresholds.push_back(make_pair(lhood1 - lhood0, (lhood1 > lhood0)));
+    
     return (lhood1 > lhood0);
+}
+
+vector<pair<double, bool> > MultiplexChainClassifier::get_thresholds()
+{
+    return thresholds;
 }

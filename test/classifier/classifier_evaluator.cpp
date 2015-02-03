@@ -28,60 +28,7 @@ typedef unsigned int uint;
 typedef long long lld;
 typedef unsigned long long llu;
 
-SingleChainClassifier::SingleChainClassifier(int gene_count, int param_id) : gene_count(gene_count), param_id(param_id)
-{
-    patient_model = new SimpleChainGMHMM(gene_count);
-    normal_model = new SimpleChainGMHMM(gene_count);
-}
-
-SingleChainClassifier::~SingleChainClassifier()
-{
-    delete patient_model;
-    delete normal_model;
-}
-
-void SingleChainClassifier::train(vector<pair<vector<vector<double> >, bool> > &training_set)
-{
-    vector<vector<double> > train_patient, train_normal;
-    int patient_cnt = 0, normal_cnt = 0;
-    
-    for (uint i=0;i<training_set.size();i++)
-    {
-        if (training_set[i].second)
-        {
-            train_patient.push_back(vector<double>(gene_count));
-            for (int j=0;j<gene_count;j++)
-            {
-                train_patient[patient_cnt][j] = training_set[i].first[j][param_id];
-            }
-            patient_cnt++;
-        }
-        else
-        {
-            train_normal.push_back(vector<double>(gene_count));
-            for (int j=0;j<gene_count;j++)
-            {
-                train_normal[normal_cnt][j] = training_set[i].first[j][param_id];
-            }
-            normal_cnt++;
-        }
-    }
-    
-    patient_model -> train(train_patient);
-    normal_model -> train(train_normal);
-}
-
-bool SingleChainClassifier::classify(vector<vector<double> > &test_data)
-{
-    vector<double> extracted_subvec;
-    extracted_subvec.resize(test_data.size());
-    for (uint i=0;i<test_data.size();i++) extracted_subvec[i] = test_data[i][param_id];
-    
-    double lhood1 = patient_model -> log_likelihood(extracted_subvec);
-    double lhood0 = normal_model -> log_likelihood(extracted_subvec);
-    
-    return (lhood1 > lhood0);
-}
+struct single_run_results
 
 int main(int argc, char **argv)
 {
