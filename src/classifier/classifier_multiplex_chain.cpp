@@ -90,12 +90,12 @@ bool MultiplexChainClassifier::classify(vector<vector<double> > &test_data)
     double lhood1 = patient_model -> log_likelihood(test_data);
     double lhood0 = normal_model -> log_likelihood(test_data);
     
-    thresholds.push_back(make_pair(lhood1 - lhood0, (lhood1 > lhood0)));
+    thresholds.push_back(lhood1 - lhood0);
     
     return (lhood1 > lhood0);
 }
 
-vector<pair<double, bool> > MultiplexChainClassifier::get_thresholds()
+vector<double> MultiplexChainClassifier::get_thresholds()
 {
     return thresholds;
 }

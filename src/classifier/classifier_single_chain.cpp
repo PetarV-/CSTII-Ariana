@@ -84,12 +84,12 @@ bool SingleChainClassifier::classify(vector<vector<double> > &test_data)
     double lhood1 = patient_model -> log_likelihood(extracted_subvec);
     double lhood0 = normal_model -> log_likelihood(extracted_subvec);
     
-    thresholds.push_back(make_pair(lhood1 - lhood0, (lhood1 > lhood0)));
+    thresholds.push_back(lhood1 - lhood0);
     
     return (lhood1 > lhood0);
 }
 
-vector<pair<double, bool> > SingleChainClassifier::get_thresholds()
+vector<double> SingleChainClassifier::get_thresholds()
 {
     return thresholds;
 }
