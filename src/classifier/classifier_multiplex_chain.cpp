@@ -72,7 +72,7 @@ void MultiplexChainClassifier::train(vector<pair<vector<vector<double> >, bool> 
                 train_normal[normal_cnt][j].resize(type_count);
                 for (int k=0;k<type_count;k++)
                 {
-                    train_patient[normal_cnt][j][k] = training_set[i].first[j][k];
+                    train_normal[normal_cnt][j][k] = training_set[i].first[j][k];
                 }
             }
             normal_cnt++;

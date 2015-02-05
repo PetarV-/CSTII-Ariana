@@ -31,4 +31,6 @@ run_result crossvalidate(Classifier<std::vector<std::vector<double> >, bool> *C,
 
 std::vector<std::pair<std::vector<std::vector<double> >, bool> > extract_data(char* filename);
 
+void dump_result(run_result &res, bool single_run, char* filename);
+
 #endif

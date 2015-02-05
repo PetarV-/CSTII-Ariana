@@ -29,24 +29,24 @@ typedef unsigned long long llu;
 
 int main(int argc, char **argv)
 {
-    if (argc != 4)
+    if (argc != 3)
     {
-        printf("Usage: ./syn_gen <type_count> <input_parameters> <output_file>\n");
+        printf("Usage: ./syn_gen <input_parameters> <output_file>\n");
         return -1;
     }
     
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     default_random_engine generator(seed);
     
-    int types = atoi(argv[1]);
-    FILE *f = fopen(argv[2], "r");
-    FILE *g = fopen(argv[3], "w");
+    FILE *f = fopen(argv[1], "r");
+    FILE *g = fopen(argv[2], "w");
     
-    int n, labels, len;
+    int n, labels, len, types;
     
-    fscanf(f, "%d%d%d", &n, &labels, &len);
+    fscanf(f, "%d%d%d%d", &n, &labels, &len, &types);
     
     fprintf(g, "%d\n", labels * n);
+    fprintf(g, "%d %d\n\n", len, types);
     
     printf("Generating synthetic data...\n");
     
@@ -71,13 +71,14 @@ int main(int argc, char **argv)
     
         for (int i=0;i<n;i++)
         {
-            fprintf(g, "%s ", label);
+            fprintf(g, "%s\n", label);
             for (int t=0;t<types;t++)
             {
                 for (int j=0;j<len;j++)
                 {
                     fprintf(g, "%lf ", N[t][j](generator));
                 }
+                fprintf(g, "\n");
             }
             fprintf(g, "\n");
         }

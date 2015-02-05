@@ -63,7 +63,11 @@ run_result single_run(Classifier<vector<vector<double> >, bool> *C, vector<pair<
     ret.negative_predictive_value = ret.true_negatives * 1.0 / (ret.true_negatives + ret.false_negatives) * 1.0;
     ret.false_discovery_rate = ret.false_positives * 1.0 / (ret.false_positives + ret.true_positives) * 1.0;
     
-    ret.mcc = (ret.true_positives * ret.true_negatives - ret.false_positives * ret.false_negatives) * 1.0 / sqrt((ret.true_positives + ret.false_positives) * (ret.true_negatives + ret.false_negatives) * (ret.true_positives + ret.false_negatives) * (ret.true_negatives + ret.false_positives));
+    double S = (ret.true_positives + ret.false_negatives) * 1.0 / total * 1.0;
+    double P = (ret.true_positives + ret.false_positives) * 1.0 / total * 1.0;
+    
+    ret.mcc = (ret.true_positives * 1.0 / total * 1.0 - S * P) / sqrt(P * S * (1 - S) * (1 - P));
+    
     ret.f1_score = ret.precision * ret.sensitivity * 2.0 / (ret.precision + ret.sensitivity) * 1.0;
     
     vector<double> thresh = C -> get_thresholds();
@@ -155,7 +159,7 @@ run_result crossvalidate(Classifier<vector<vector<double> >, bool> *C, vector<pa
     {
         vector<pair<vector<vector<double> >, bool> > curr_train, curr_test;
         curr_test = folds[i];
-        curr_train.resize(total - folds[i].size());
+        curr_train.reserve(total - folds[i].size());
         for (int j=0;j<fold_cnt;j++)
         {
             if (i != j) curr_train.insert(curr_train.end(), folds[j].begin(), folds[j].end());
@@ -164,8 +168,98 @@ run_result crossvalidate(Classifier<vector<vector<double> >, bool> *C, vector<pa
         individual[i] = single_run(C, curr_train, curr_test);
     }
 
-    // TODO
-    return individual[0];
+    run_result ret;
+    ret.accuracy = 0.0;
+    ret.precision = 0.0;
+    ret.sensitivity = 0.0;
+    ret.specificity = 0.0;
+    ret.false_positive_rate = 0.0;
+    ret.negative_predictive_value = 0.0;
+    ret.false_discovery_rate = 0.0;
+    ret.mcc = 0.0;
+    ret.f1_score = 0.0;
+    
+    for (int i=0;i<fold_cnt;i++)
+    {
+        ret.accuracy += individual[i].accuracy;
+        ret.precision += individual[i].precision;
+        ret.sensitivity += individual[i].sensitivity;
+        ret.specificity += individual[i].specificity;
+        ret.false_positive_rate += individual[i].false_positive_rate;
+        ret.negative_predictive_value += individual[i].negative_predictive_value;
+        ret.false_discovery_rate += individual[i].false_discovery_rate;
+        ret.mcc += individual[i].mcc;
+        ret.f1_score += individual[i].f1_score;
+    
+        char cur_filename[150];
+        sprintf(cur_filename, "results_%02d.out", i);
+        dump_result(individual[i], true, cur_filename);
+    }
+    
+    ret.accuracy /= (fold_cnt * 1.0);
+    ret.precision /= (fold_cnt * 1.0);
+    ret.sensitivity /= (fold_cnt * 1.0);
+    ret.specificity /= (fold_cnt * 1.0);
+    ret.false_positive_rate /= (fold_cnt * 1.0);
+    ret.negative_predictive_value /= (fold_cnt * 1.0);
+    ret.false_discovery_rate /= (fold_cnt * 1.0);
+    ret.mcc /= (fold_cnt * 1.0);
+    ret.f1_score /= (fold_cnt * 1.0);
+    
+    priority_queue<pair<double, pair<int, int> > > pq;
+    
+    double start_point = individual[0].roc_points[0].first;
+    for (int i=0;i<fold_cnt;i++)
+    {
+        if (start_point > individual[i].roc_points[0].first)
+        {
+            start_point = individual[i].roc_points[0].first;
+        }
+        
+        pq.push(make_pair(individual[i].roc_points[1].first, make_pair(i, 1)));
+    }
+    
+    ret.roc_points.push_back(make_pair(start_point, make_pair(0.0, 0.0)));
+    double curr_sum_sensitivity = 0.0, curr_sum_fpr = 0.0;
+    
+    while (!pq.empty())
+    {
+        pair<double, pair<int, int> > curr_top = pq.top();
+        pq.pop();
+        
+        double curr_thresh = curr_top.first;
+        int curr_node = curr_top.second.first;
+        int curr_pos = curr_top.second.second;
+        
+        double old_sensitivity = individual[curr_node].roc_points[curr_pos - 1].second.first;
+        double old_fpr = individual[curr_node].roc_points[curr_pos - 1].second.second;
+        
+        double new_sensitivity = individual[curr_node].roc_points[curr_pos].second.first;
+        double new_fpr = individual[curr_node].roc_points[curr_pos].second.second;
+        
+        curr_sum_sensitivity += (new_sensitivity - old_sensitivity);
+        curr_sum_fpr += (new_fpr - old_fpr);
+        
+        ret.roc_points.push_back(make_pair(curr_thresh, make_pair(curr_sum_sensitivity / (fold_cnt * 1.0), curr_sum_fpr / (fold_cnt * 1.0))));
+        
+        if (uint(curr_pos) < individual[curr_node].roc_points.size() - 1)
+        {
+            pq.push(make_pair(individual[curr_node].roc_points[curr_pos + 1].first, make_pair(curr_node, curr_pos + 1)));
+        }
+    }
+    
+    ret.roc_auc = 0.0;
+    for (int i=0;i<fold_cnt;i++)
+    {
+        ret.roc_auc += individual[i].roc_auc;
+    }
+    ret.roc_auc /= (fold_cnt * 1.0);
+    
+    char filename[101];
+    sprintf(filename, "results_full.out");
+    dump_result(ret, false, filename);
+    
+    return ret;
 }
 
 vector<pair<vector<vector<double> >, bool> > extract_data(char* filename)
@@ -202,4 +296,38 @@ vector<pair<vector<vector<double> >, bool> > extract_data(char* filename)
     fclose(f);
     
     return ret;
+}
+
+void dump_result(run_result &res, bool single_run, char* filename)
+{
+    FILE *f = fopen(filename, "w");
+    
+    fprintf(f, "%s results:\n", (single_run ? "Single run" : "Crossvalidation"));
+    
+    if (single_run)
+    {
+        fprintf(f, "True positives: %d, False positives: %d\n", res.true_positives, res.false_positives);
+        fprintf(f, "False negatives: %d, True negatives: %d\n", res.false_negatives, res.true_negatives);
+    }
+    
+    fprintf(f, "Accuracy: %lf\n", res.accuracy);
+    fprintf(f, "Precision: %lf\n", res.precision);
+    fprintf(f, "Sensitivity: %lf\n", res.sensitivity);
+    fprintf(f, "Specificity: %lf\n", res.specificity);
+    fprintf(f, "False positive rate: %lf\n", res.false_positive_rate);
+    fprintf(f, "Negative predictive value: %lf\n", res.negative_predictive_value);
+    fprintf(f, "False discovery rate: %lf\n", res.false_discovery_rate);
+    
+    fprintf(f, "Matthews Correlation Coefficient: %lf\n", res.mcc);
+    fprintf(f, "F-1 score: %lf\n", res.f1_score);
+    
+    fprintf(f, "ROC curve parameters (in ascending order):\n");
+    for (uint i=0;i<res.roc_points.size();i++)
+    {
+        fprintf(f, "%lf %lf\n", res.roc_points[i].second.first, res.roc_points[i].second.second);
+    }
+    
+    fprintf(f, "Area under ROC curve: %lf\n", res.roc_auc);
+    
+    fclose(f);
 }
