@@ -8,5 +8,11 @@ classifier_single_chain : classifier_single_chain.cpp
 classifier_multiplex_chain : classifier_multiplex_chain.cpp
 	$(CC) $(CFLAGS) classifier_multiplex_chain.cpp -o ../../build/classifier_multiplex_chain.o
 
+classifier_generic_single_layer : classifier_generic_single_layer.cpp
+	$(CC) $(CFLAGS) classifier_generic_single_layer.cpp -o ../../build/classifier_generic_single_layer.o
+
+classifier_generic_multiplex : classifier_generic_multiplex.cpp
+	$(CC) $(CFLAGS) classifier_generic_multiplex.cpp -o ../../build/classifier_generic_multiplex.o
+
 clean :
 	-rm -f ../../build/*.o *~ classifier &> /dev/null

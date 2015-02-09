@@ -17,6 +17,7 @@
 
 #include <classifier.h>
 #include <hmm.h>
+#include <layers.h>
 
 #define DPRINTC(C) printf(#C " = %c\n", (C))
 #define DPRINTS(S) printf(#S " = %s\n", (S))
@@ -29,20 +30,20 @@ typedef unsigned int uint;
 typedef long long lld;
 typedef unsigned long long llu;
 
-SingleChainClassifier::SingleChainClassifier(int gene_count, int param_id) : gene_count(gene_count), param_id(param_id)
+GenericSingleLayerClassifier::GenericSingleLayerClassifier(int gene_count, int param_id) : gene_count(gene_count), param_id(param_id)
 {
-    patient_model = new SimpleChainGMHMM(gene_count);
-    normal_model = new SimpleChainGMHMM(gene_count);
+    patient_model = new SimpleGraphLayer(gene_count);
+    normal_model = new SimpleGraphLayer(gene_count);
     thresholds.clear();
 }
 
-SingleChainClassifier::~SingleChainClassifier()
+GenericSingleLayerClassifier::~GenericSingleLayerClassifier()
 {
     delete patient_model;
     delete normal_model;
 }
 
-void SingleChainClassifier::train(vector<pair<vector<vector<double> >, bool> > &training_set)
+void GenericSingleLayerClassifier::train(vector<pair<vector<vector<double> >, bool> > &training_set)
 {
     vector<vector<double> > train_patient, train_normal;
     int patient_cnt = 0, normal_cnt = 0;
@@ -75,7 +76,7 @@ void SingleChainClassifier::train(vector<pair<vector<vector<double> >, bool> > &
     thresholds.clear();
 }
 
-bool SingleChainClassifier::classify(vector<vector<double> > &test_data)
+bool GenericSingleLayerClassifier::classify(vector<vector<double> > &test_data)
 {
     vector<double> extracted_subvec;
     extracted_subvec.resize(test_data.size());
@@ -89,7 +90,7 @@ bool SingleChainClassifier::classify(vector<vector<double> > &test_data)
     return (lhood1 > lhood0);
 }
 
-vector<double> SingleChainClassifier::get_thresholds()
+vector<double> GenericSingleLayerClassifier::get_thresholds()
 {
     return thresholds;
 }

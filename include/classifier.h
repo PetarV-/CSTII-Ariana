@@ -4,6 +4,7 @@
 #include <vector>
 
 #include <hmm.h>
+#include <layers.h>
 #include <multiplex.h>
 
 template<typename Data, typename Label>
@@ -49,6 +50,46 @@ private:
 public:
     MultiplexChainClassifier(int gene_count, int type_count);
     ~MultiplexChainClassifier();
+    
+    void train(std::vector<std::pair<std::vector<std::vector<double> >, bool> > &training_set);
+    bool classify(std::vector<std::vector<double> > &test_data);
+    
+    std::vector<double> get_thresholds();
+};
+
+class GenericSingleLayerClassifier : public Classifier<std::vector<std::vector<double> >, bool>
+{
+private:
+    int gene_count;
+    int param_id;
+    SimpleGraphLayer* patient_model;
+    SimpleGraphLayer* normal_model;
+    
+    std::vector<double> thresholds;
+    
+public:
+    GenericSingleLayerClassifier(int gene_count, int param_id = 0);
+    ~GenericSingleLayerClassifier();
+    
+    void train(std::vector<std::pair<std::vector<std::vector<double> >, bool> > &training_set);
+    bool classify(std::vector<std::vector<double> > &test_data);
+    
+    std::vector<double> get_thresholds();
+};
+
+class GenericMultiplexClassifier : public Classifier<std::vector<std::vector<double> >, bool>
+{
+private:
+    int gene_count;
+    int type_count;
+    Multiplex* patient_model;
+    Multiplex* normal_model;
+    
+    std::vector<double> thresholds;
+    
+public:
+    GenericMultiplexClassifier(int gene_count, int type_count);
+    ~GenericMultiplexClassifier();
     
     void train(std::vector<std::pair<std::vector<std::vector<double> >, bool> > &training_set);
     bool classify(std::vector<std::vector<double> > &test_data);

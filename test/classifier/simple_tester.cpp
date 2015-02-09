@@ -50,7 +50,8 @@ int main(int argc, char **argv)
     else if (classifier_type == "gmhmm-multiplex-chain") C = new MultiplexChainClassifier(gene_count, type_count);
     else if (classifier_type == "gmhmm-single");
     else if (classifier_type == "gmhmm-multiplex");
-    else if (classifier_type == "general-multiplex");
+    else if (classifier_type == "general-single") C = new GenericSingleLayerClassifier(gene_count);
+    else if (classifier_type == "general-multiplex") C = new GenericMultiplexClassifier(gene_count, type_count);
     else
     {
         printf("classifier_type must be of the following kind:\n");
@@ -58,6 +59,7 @@ int main(int argc, char **argv)
         printf("gmhmm-multiplex-chain\n");
         printf("gmhmm-single\n");
         printf("gmhmm-multiplex\n");
+        printf("general-single\n");
         printf("general-multiplex\n");
         return -2;
     }

@@ -264,7 +264,7 @@ double**** Multiplex::get_communicability_matrix()
     return ret;
 }
 
-double** Multiplex::get_aggregate_matrix()
+double** Multiplex::get_aggregate_matrix(bool normalise)
 {
     double ****G = get_communicability_matrix();
     
@@ -291,6 +291,22 @@ double** Multiplex::get_aggregate_matrix()
         }
     }
     
+    if (normalise)
+    {
+        for (int i=0;i<n;i++)
+        {
+            double sum = 0.0;
+            for (int j=0;j<n;j++)
+            {
+                sum += ret[i][j];
+            }
+            for (int j=0;j<n;j++)
+            {
+                ret[i][j] /= sum;
+            }
+        }
+    }
+    
     for (int i=0;i<L;i++)
     {
         for (int j=0;j<L;j++)
@@ -308,7 +324,21 @@ double** Multiplex::get_aggregate_matrix()
     return ret;
 }
 
-void Multiplex::set_omega(double **omega)
+void Multiplex::sync()
+{
+    for (int i=0;i<L;i++)
+    {
+        for (int j=0;j<n;j++)
+        {
+            for (int k=0;k<n;k++)
+            {
+                M[i][i][j][k] = layers[i] -> get_adj(j, k);
+            }
+        }
+    }
+}
+
+void Multiplex::set_omega(double **omega, bool normalise, bool upsync)
 {
     for (int i=0;i<L;i++)
     {
@@ -322,6 +352,33 @@ void Multiplex::set_omega(double **omega)
                     {
                         if (k != l) M[i][j][k][l] = 0.0;
                         else M[i][j][k][l] = omega[i][j];
+                    }
+                }
+            }
+        }
+    }
+    
+    // now normalise if desired
+    if (normalise)
+    {
+        for (int i=0;i<L;i++)
+        {
+            for (int k=0;k<n;k++)
+            {
+                double sum = 0.0;
+                for (int j=0;j<L;j++)
+                {
+                    for (int l=0;l<n;l++)
+                    {
+                        sum += M[i][j][k][l];
+                    }
+                }
+                for (int j=0;j<L;j++)
+                {
+                    for (int l=0;l<n;l++)
+                    {
+                        M[i][j][k][l] /= sum;
+                        if (i == j && upsync) layers[i] -> set_adj(k, l, M[i][j][k][l]);
                     }
                 }
             }
@@ -345,6 +402,8 @@ void Multiplex::train(vector<vector<vector<double> > > &train_set)
         layers[l] -> train(curr_set);
     }
     
+    sync();
+    
     // Define the lambdas that calculate likelihoods for a given omega
     toplevel = this;
     objectives.resize(train_set.size());
@@ -352,17 +411,22 @@ void Multiplex::train(vector<vector<vector<double> > > &train_set)
     {
         objectives[t] = [this, t, &train_set] (vector<double> X) -> double
         {
+            int ii = 0;
             double **temp_omega = new double*[L];
             for (int i=0;i<L;i++)
             {
                 temp_omega[i] = new double[L];
                 for (int j=0;j<L;j++)
                 {
-                    temp_omega[i][j] = X[i*L + j];
+                    if (i != j)
+                    {
+                        temp_omega[i][j] = X[ii++];
+                    }
+                    else temp_omega[i][j] = 0.0;
                 }
             }
             
-            set_omega(temp_omega);
+            set_omega(temp_omega, true, false);
             
             for (int i=0;i<L;i++) delete[] temp_omega[i];
             delete[] temp_omega;
@@ -374,7 +438,7 @@ void Multiplex::train(vector<vector<vector<double> > > &train_set)
     // Prepare the input parameters for NSGA-II
     string filename = "param.in";
     const int pop_size = 100;
-    const int ft_size = L * L;
+    const int ft_size = L * (L - 1);
     const int obj_size = train_set.size();
     const int generations = 200;
     const double p_crossover = 0.9;
@@ -398,6 +462,7 @@ void Multiplex::train(vector<vector<vector<double> > > &train_set)
     
     // Run the algorithm
     vector<chromosome> candidates = optimise((char*)filename.c_str());
+    
     
     // Evaluate the best choice of omega
     int best = -1;
@@ -428,7 +493,7 @@ void Multiplex::train(vector<vector<vector<double> > > &train_set)
         }
     }
     
-    set_omega(fin_omega);
+    set_omega(fin_omega, true, false);
     
     for (int i=0;i<L;i++) delete[] fin_omega[i];
     delete[] fin_omega;
@@ -447,18 +512,19 @@ void Multiplex::train(vector<vector<vector<double> > > &train_set)
 double Multiplex::log_likelihood(vector<vector<double> > &test_data)
 {
     // First aggregate this multiplex
-    double **aggr = this -> get_aggregate_matrix();
+    double **aggr = this -> get_aggregate_matrix(true);
     
     // Then construct a representative multiplex of the test data
     vector<AbstractGraphLayer*> test_lyrs(L);
     for (int l=0;l<L;l++)
     {
+        test_lyrs[l] = new SimpleGraphLayer(n);
         vector<vector<double> > curr_set(1, vector<double>(n));
         for (int j=0;j<n;j++)
         {
             curr_set[0][j] = test_data[j][l];
         }
-        layers[l] -> train(curr_set);
+        test_lyrs[l] -> train(curr_set);
     }
     
     double **omega = new double*[L];
@@ -474,7 +540,7 @@ double Multiplex::log_likelihood(vector<vector<double> > &test_data)
     Multiplex* test_mux = new Multiplex(n, test_lyrs, omega);
     
     // Aggregate it
-    double **aggr_test = test_mux -> get_aggregate_matrix();
+    double **aggr_test = test_mux -> get_aggregate_matrix(true);
     
     // Then calculate the distance of those two matrices
     double ret = 0.0;
@@ -490,8 +556,6 @@ double Multiplex::log_likelihood(vector<vector<double> > &test_data)
     for (int i=0;i<n;i++) delete[] aggr[i];
     delete[] aggr;
     
-    for (int i=0;i<L;i++) delete test_lyrs[i];
-    
     for (int i=0;i<L;i++) delete[] omega[i];
     delete[] omega;
     
@@ -502,7 +566,7 @@ double Multiplex::log_likelihood(vector<vector<double> > &test_data)
     
     // As the desired result is similarity rather than distance,
     // return the negative log
-    return -log(ret);
+    return -log(sqrt(ret));
 }
 
 vector<function<double(vector<double>)> > Multiplex::extract_objectives()

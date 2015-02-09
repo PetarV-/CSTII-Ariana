@@ -33,9 +33,10 @@ public:
     void set_edge(int lyr1, int lyr2, int n1, int n2, double val);
     double** get_matrix_form();
     double**** get_communicability_matrix();
-    double** get_aggregate_matrix();
+    double** get_aggregate_matrix(bool normalise);
     
-    void set_omega(double **omega);
+    void sync();
+    void set_omega(double **omega, bool normalise, bool upsync);
     void train(std::vector<std::vector<std::vector<double> > > &train_set);
     double log_likelihood(std::vector<std::vector<double> > &test_data);
     

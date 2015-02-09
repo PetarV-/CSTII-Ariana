@@ -388,6 +388,7 @@ vector<chromosome> optimise(char *input_parameter_file)
     
     for (int i=0;i<generations;i++)
     {
+        printf("Iterating...\n");
         iterate();
         if ((i+1)%20 == 0) printf("Generation %d complete.\n", i+1);
     }
