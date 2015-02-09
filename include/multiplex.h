@@ -19,6 +19,8 @@ private:
     int L;
     std::vector<AbstractGraphLayer*> layers;
     double ****M;
+    
+    std::vector<std::function<double(std::vector<double>)> > objectives;
 public:
     Multiplex(int n, int L);
     Multiplex(int n, int L, double ****A);
@@ -32,6 +34,12 @@ public:
     double** get_matrix_form();
     double**** get_communicability_matrix();
     double** get_aggregate_matrix();
+    
+    void set_omega(double **omega);
+    void train(std::vector<std::vector<std::vector<double> > > &train_set);
+    double log_likelihood(std::vector<std::vector<double> > &test_data);
+    
+    std::vector<std::function<double(std::vector<double>)> > extract_objectives();
     
     void dump_muxviz_data(char *nodes_filename, char *base_layers_filename);
 };

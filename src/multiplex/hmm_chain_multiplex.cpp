@@ -267,11 +267,6 @@ vector<function<double(vector<double>)> > HMMChainMultiplex::extract_objectives(
     return objectives;
 }
 
-vector<function<double(vector<double>)> > get_objectives()
-{
-    return toplevel -> extract_objectives();
-}
-
 void HMMChainMultiplex::dump_muxviz_data(char *nodes_filename, char *base_layers_filename)
 {
     FILE *f = fopen(nodes_filename, "w");
@@ -301,4 +296,9 @@ void HMMChainMultiplex::dump_muxviz_data(char *nodes_filename, char *base_layers
     }
     
     printf("Done.\n");
+}
+
+vector<function<double(vector<double>)> > get_objectives()
+{
+    return toplevel -> extract_objectives();
 }

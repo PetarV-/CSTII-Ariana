@@ -14,9 +14,13 @@
 #include <set>
 #include <map>
 #include <complex>
+#include <functional>
 
 #include <multiplex.h>
 #include <matrix_lib.h>
+#include <nsga2.h>
+#include <objectives.h>
+#include <vector_cmp.h>
 
 #define DPRINTC(C) printf(#C " = %c\n", (C))
 #define DPRINTS(S) printf(#S " = %s\n", (S))
@@ -27,6 +31,8 @@
 using namespace std;
 typedef long long lld;
 typedef unsigned long long llu;
+
+static Multiplex *toplevel;
 
 Multiplex::Multiplex(int n, int L) : n(n), L(L)
 {
@@ -302,6 +308,208 @@ double** Multiplex::get_aggregate_matrix()
     return ret;
 }
 
+void Multiplex::set_omega(double **omega)
+{
+    for (int i=0;i<L;i++)
+    {
+        for (int j=0;j<L;j++)
+        {
+            for (int k=0;k<n;k++)
+            {
+                for (int l=0;l<n;l++)
+                {
+                    if (i != j)
+                    {
+                        if (k != l) M[i][j][k][l] = 0.0;
+                        else M[i][j][k][l] = omega[i][j];
+                    }
+                }
+            }
+        }
+    }
+}
+
+void Multiplex::train(vector<vector<vector<double> > > &train_set)
+{
+    // Train all the layers individually (as before)
+    for (int l=0;l<L;l++)
+    {
+        vector<vector<double> > curr_set(train_set.size(), vector<double>(n));
+        for (uint i=0;i<train_set.size();i++)
+        {
+            for (int j=0;j<n;j++)
+            {
+                curr_set[i][j] = train_set[i][j][l];
+            }
+        }
+        layers[l] -> train(curr_set);
+    }
+    
+    // Define the lambdas that calculate likelihoods for a given omega
+    toplevel = this;
+    objectives.resize(train_set.size());
+    for (uint t=0;t<train_set.size();t++)
+    {
+        objectives[t] = [this, t, &train_set] (vector<double> X) -> double
+        {
+            double **temp_omega = new double*[L];
+            for (int i=0;i<L;i++)
+            {
+                temp_omega[i] = new double[L];
+                for (int j=0;j<L;j++)
+                {
+                    temp_omega[i][j] = X[i*L + j];
+                }
+            }
+            
+            set_omega(temp_omega);
+            
+            for (int i=0;i<L;i++) delete[] temp_omega[i];
+            delete[] temp_omega;
+            
+            return -log_likelihood(train_set[t]);
+        };
+    }
+    
+    // Prepare the input parameters for NSGA-II
+    string filename = "param.in";
+    const int pop_size = 100;
+    const int ft_size = L * L;
+    const int obj_size = train_set.size();
+    const int generations = 200;
+    const double p_crossover = 0.9;
+    const double p_mutation = 1.0;
+    const double di_crossover = 10.0;
+    const double di_mutation = 100.0;
+    
+    FILE *f = fopen(filename.c_str(), "w");
+    fprintf(f, "%d\n", pop_size);
+    fprintf(f, "%d\n", ft_size);
+    fprintf(f, "%d\n", obj_size);
+    fprintf(f, "%d\n", generations);
+    fprintf(f, "%lf\n%lf\n", p_crossover, p_mutation);
+    fprintf(f, "%lf\n%lf\n", di_crossover, di_mutation);
+    for (int i=0;i<ft_size;i++)
+    {
+        fprintf(f, "0.000001 1.0\n");
+    }
+    
+    fclose(f);
+    
+    // Run the algorithm
+    vector<chromosome> candidates = optimise((char*)filename.c_str());
+    
+    // Evaluate the best choice of omega
+    int best = -1;
+    double min_sum = -1.0;
+    for (uint i=0;i<candidates.size();i++)
+    {
+        sort(candidates[i].values.begin(), candidates[i].values.end());
+        double curr_sum = 0.0;
+        for (uint j=0;j<train_set.size();j++)
+        {
+            curr_sum += (j + 1) * candidates[i].values[j];
+        }
+        if (best == -1 || curr_sum < min_sum)
+        {
+            best = i;
+            min_sum = curr_sum;
+        }
+    }
+    
+    // Adjust the parameters accordingly
+    double **fin_omega = new double*[L];
+    for (int i=0;i<L;i++)
+    {
+        fin_omega[i] = new double[L];
+        for (int j=0;j<L;j++)
+        {
+            fin_omega[i][j] = candidates[best].features[i*L + j];
+        }
+    }
+    
+    set_omega(fin_omega);
+    
+    for (int i=0;i<L;i++) delete[] fin_omega[i];
+    delete[] fin_omega;
+    
+    printf("TRANSITION MATRIX:\n");
+    for (int i=0;i<L;i++)
+    {
+        for (int j=0;j<L;j++)
+        {
+            printf("%lf ", M[i][j][0][0]);
+        }
+        printf("\n");
+    }
+}
+
+double Multiplex::log_likelihood(vector<vector<double> > &test_data)
+{
+    // First aggregate this multiplex
+    double **aggr = this -> get_aggregate_matrix();
+    
+    // Then construct a representative multiplex of the test data
+    vector<AbstractGraphLayer*> test_lyrs(L);
+    for (int l=0;l<L;l++)
+    {
+        vector<vector<double> > curr_set(1, vector<double>(n));
+        for (int j=0;j<n;j++)
+        {
+            curr_set[0][j] = test_data[j][l];
+        }
+        layers[l] -> train(curr_set);
+    }
+    
+    double **omega = new double*[L];
+    for (int i=0;i<L;i++)
+    {
+        omega[i] = new double[L];
+        for (int j=0;j<L;j++)
+        {
+            omega[i][j] = M[i][j][0][0];
+        }
+    }
+    
+    Multiplex* test_mux = new Multiplex(n, test_lyrs, omega);
+    
+    // Aggregate it
+    double **aggr_test = test_mux -> get_aggregate_matrix();
+    
+    // Then calculate the distance of those two matrices
+    double ret = 0.0;
+    
+    for (int i=0;i<n;i++)
+    {
+        for (int j=0;j<n;j++)
+        {
+            ret += (aggr[i][j] - aggr_test[i][j]) * (aggr[i][j] - aggr_test[i][j]);
+        }
+    }
+    
+    for (int i=0;i<n;i++) delete[] aggr[i];
+    delete[] aggr;
+    
+    for (int i=0;i<L;i++) delete test_lyrs[i];
+    
+    for (int i=0;i<L;i++) delete[] omega[i];
+    delete[] omega;
+    
+    delete test_mux;
+    
+    for (int i=0;i<n;i++) delete[] aggr_test[i];
+    delete[] aggr_test;
+    
+    // As the desired result is similarity rather than distance,
+    // return the negative log
+    return -log(ret);
+}
+
+vector<function<double(vector<double>)> > Multiplex::extract_objectives()
+{
+    return objectives;
+}
+
 void Multiplex::dump_muxviz_data(char *nodes_filename, char *base_layers_filename)
 {
     FILE *f = fopen(nodes_filename, "w");
@@ -334,4 +542,9 @@ void Multiplex::dump_muxviz_data(char *nodes_filename, char *base_layers_filenam
     }
     
     printf("Done.\n");
+}
+
+vector<function<double(vector<double>)> > get_objectives()
+{
+    return toplevel -> extract_objectives();
 }
