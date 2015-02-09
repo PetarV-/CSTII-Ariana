@@ -301,3 +301,37 @@ double** Multiplex::get_aggregate_matrix()
     
     return ret;
 }
+
+void Multiplex::dump_muxviz_data(char *nodes_filename, char *base_layers_filename)
+{
+    FILE *f = fopen(nodes_filename, "w");
+    
+    fprintf(f, "nodeID\n");
+    
+    for (int i=1;i<=n;i++)
+    {
+        fprintf(f, "%d\n", i);
+    }
+    
+    fclose(f);
+    
+    printf("Node data successfully written to %s.\n", nodes_filename);
+    
+    for (int i=0;i<L;i++)
+    {
+        char curr_lyr_filename[150];
+        sprintf(curr_lyr_filename, "%s_%d", base_layers_filename, i+1);
+        FILE *g = fopen(curr_lyr_filename, "w");
+        for (int j=0;j<n;j++)
+        {
+            for (int k=0;k<n;k++)
+            {
+                fprintf(g, "%d %d %lf\n", j+1, k+1, layers[i] -> get_adj(j, k));
+            }
+        }
+        fclose(g);
+        printf("Layer %d data successfully written to %s.\n", i+1, curr_lyr_filename);
+    }
+    
+    printf("Done.\n");
+}

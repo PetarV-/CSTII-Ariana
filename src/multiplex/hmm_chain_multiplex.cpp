@@ -271,3 +271,34 @@ vector<function<double(vector<double>)> > get_objectives()
 {
     return toplevel -> extract_objectives();
 }
+
+void HMMChainMultiplex::dump_muxviz_data(char *nodes_filename, char *base_layers_filename)
+{
+    FILE *f = fopen(nodes_filename, "w");
+    
+    fprintf(f, "nodeID nodeX nodeY\n");
+    
+    for (int i=1;i<=obs;i++)
+    {
+        fprintf(f, "%d %d %d\n", i, i, 0);
+    }
+    
+    fclose(f);
+    
+    printf("Node data successfully written to %s.\n", nodes_filename);
+    
+    for (int i=0;i<L;i++)
+    {
+        char curr_lyr_filename[150];
+        sprintf(curr_lyr_filename, "%s_%d", base_layers_filename, i+1);
+        FILE *g = fopen(curr_lyr_filename, "w");
+        for (int j=1;j<obs;j++)
+        {
+            fprintf(g, "%d %d %lf\n", j, j+1, omega[i][i]);
+        }
+        fclose(g);
+        printf("Layer %d data successfully written to %s.\n", i+1, curr_lyr_filename);
+    }
+    
+    printf("Done.\n");
+}

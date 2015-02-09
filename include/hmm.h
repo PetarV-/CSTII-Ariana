@@ -49,16 +49,4 @@ public:
     double log_likelihood(std::vector<double> &test_data);
 };
 
-class tdHMM : public HMM
-{
-private:
-    int k; // the dimension of the HMM
-    double *P_init; // initial probability of each dimension (k)
-    double **dim_trans; // transition probabilities between dimensions (k x k)
-    double **dim_obs; // observation probabilities of each dimension (k x obs)
-public:
-    tdHMM(int n, int k, int obs, double *P, double **A, double **B);
-    ~tdHMM();
-};
-
 #endif

@@ -32,6 +32,8 @@ public:
     double** get_matrix_form();
     double**** get_communicability_matrix();
     double** get_aggregate_matrix();
+    
+    void dump_muxviz_data(char *nodes_filename, char *base_layers_filename);
 };
 
 class HMMChainMultiplex
@@ -52,6 +54,31 @@ public:
     double log_likelihood(std::vector<std::vector<double> > &test_data);
     
     std::vector<std::function<double(std::vector<double>)> > extract_objectives();
+    
+    void dump_muxviz_data(char *nodes_filename, char *base_layers_filename);
+};
+
+class HMMGeneralMultiplex
+{
+private:
+    int n;
+    int obs;
+    int L;
+    std::vector<HMM*> layers;
+    double **omega;
+    
+    std::vector<std::function<double(std::vector<double>)> > objectives;
+public:
+    HMMGeneralMultiplex(int n, int obs, int L);
+    ~HMMGeneralMultiplex();
+    
+    void set_omega(double **omega);
+    void train(std::vector<std::vector<std::vector<double> > > &train_set);
+    double log_likelihood(std::vector<std::vector<double> > &test_data);
+    
+    std::vector<std::function<double(std::vector<double>)> > extract_objectives();
+    
+    void dump_muxviz_data(char *nodes_filename, char *base_layers_filename);
 };
 
 #endif
