@@ -34,14 +34,18 @@ Classifier<vector<vector<double> >, bool> *C;
 
 int main(int argc, char **argv)
 {
-    if (argc != 3)
+    if (argc != 5)
     {
-        printf("Usage: ./simple_tester <classifier_type> <data_set_file>\n");
+        printf("Usage: ./simple_tester <classifier_type> <data_set_file> <noise_mean_lo>:<noise_mean_step>:<noise_mean_hi> <noise_stddev_lo>:<noise_stddev_step>:<noise_stddev_hi>\n");
         return -1;
     }
     
     string classifier_type = argv[1];
     vector<pair<vector<vector<double> >, bool> > data = extract_data(argv[2]);
+    double mu_lo, mu_step, mu_hi;
+    double sigma_lo, sigma_step, sigma_hi;
+    sscanf(argv[3], "%lf:%lf:%lf", &mu_lo, &mu_step, &mu_hi);
+    sscanf(argv[4], "%lf:%lf:%lf", &sigma_lo, &sigma_step, &sigma_hi);
     
     int gene_count = data[0].first.size();
     int type_count = data[0].first[0].size();
@@ -64,7 +68,7 @@ int main(int argc, char **argv)
         return -2;
     }
     
-    run_result results = crossvalidate(C, data);
+    noise_test(C, data, mu_lo, mu_step, mu_hi, sigma_lo, sigma_step, sigma_hi);
     
     return 0;
 }

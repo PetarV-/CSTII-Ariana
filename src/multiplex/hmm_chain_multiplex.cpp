@@ -124,11 +124,11 @@ void HMMChainMultiplex::train(vector<vector<vector<double> > > &train_set)
     const int pop_size = 100;
     const int ft_size = L * L;
     const int obj_size = train_set.size();
-    const int generations = 200;
+    const int generations = 250;
     const double p_crossover = 0.9;
-    const double p_mutation = 1.0;
-    const double di_crossover = 10.0;
-    const double di_mutation = 100.0;
+    const double p_mutation = 1.0 / ft_size;
+    const double di_crossover = 20.0;
+    const double di_mutation = 20.0;
     
     FILE *f = fopen(filename.c_str(), "w");
     fprintf(f, "%d\n", pop_size);
@@ -298,7 +298,7 @@ void HMMChainMultiplex::dump_muxviz_data(char *nodes_filename, char *base_layers
     printf("Done.\n");
 }
 
-//vector<function<double(vector<double>)> > get_objectives()
-//{
-//    return toplevel -> extract_objectives();
-//}
+vector<function<double(vector<double>)> > get_objectives()
+{
+    return toplevel -> extract_objectives();
+}

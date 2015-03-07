@@ -3,6 +3,8 @@
 #include <string.h>
 #include <time.h>
 #include <assert.h>
+#include <unistd.h>
+#include <sys/stat.h>
 #include <iostream>
 #include <vector>
 #include <list>
@@ -15,6 +17,8 @@
 #include <map>
 #include <complex>
 #include <functional>
+#include <chrono>
+#include <random>
 
 #include <classifier.h>
 #include <classifier_evaluator.h>
@@ -29,6 +33,96 @@ using namespace std;
 typedef unsigned int uint;
 typedef long long lld;
 typedef unsigned long long llu;
+
+run_result mean_result(vector<run_result> &individual)
+{
+    int res_cnt = individual.size();
+    
+    run_result ret;
+    ret.accuracy = 0.0;
+    ret.precision = 0.0;
+    ret.sensitivity = 0.0;
+    ret.specificity = 0.0;
+    ret.false_positive_rate = 0.0;
+    ret.negative_predictive_value = 0.0;
+    ret.false_discovery_rate = 0.0;
+    ret.mcc = 0.0;
+    ret.f1_score = 0.0;
+    
+    for (int i=0;i<res_cnt;i++)
+    {
+        ret.accuracy += individual[i].accuracy;
+        ret.precision += individual[i].precision;
+        ret.sensitivity += individual[i].sensitivity;
+        ret.specificity += individual[i].specificity;
+        ret.false_positive_rate += individual[i].false_positive_rate;
+        ret.negative_predictive_value += individual[i].negative_predictive_value;
+        ret.false_discovery_rate += individual[i].false_discovery_rate;
+        ret.mcc += individual[i].mcc;
+        ret.f1_score += individual[i].f1_score;
+    }
+    
+    ret.accuracy /= (res_cnt * 1.0);
+    ret.precision /= (res_cnt * 1.0);
+    ret.sensitivity /= (res_cnt * 1.0);
+    ret.specificity /= (res_cnt * 1.0);
+    ret.false_positive_rate /= (res_cnt * 1.0);
+    ret.negative_predictive_value /= (res_cnt * 1.0);
+    ret.false_discovery_rate /= (res_cnt * 1.0);
+    ret.mcc /= (res_cnt * 1.0);
+    ret.f1_score /= (res_cnt * 1.0);
+    
+    priority_queue<pair<double, pair<int, int> > > pq;
+    
+    double start_point = individual[0].roc_points[0].first;
+    for (int i=0;i<res_cnt;i++)
+    {
+        if (start_point > individual[i].roc_points[0].first)
+        {
+            start_point = individual[i].roc_points[0].first;
+        }
+        
+        pq.push(make_pair(individual[i].roc_points[1].first, make_pair(i, 1)));
+    }
+    
+    ret.roc_points.push_back(make_pair(start_point, make_pair(0.0, 0.0)));
+    double curr_sum_sensitivity = 0.0, curr_sum_fpr = 0.0;
+    
+    while (!pq.empty())
+    {
+        pair<double, pair<int, int> > curr_top = pq.top();
+        pq.pop();
+        
+        double curr_thresh = curr_top.first;
+        int curr_node = curr_top.second.first;
+        int curr_pos = curr_top.second.second;
+        
+        double old_sensitivity = individual[curr_node].roc_points[curr_pos - 1].second.first;
+        double old_fpr = individual[curr_node].roc_points[curr_pos - 1].second.second;
+        
+        double new_sensitivity = individual[curr_node].roc_points[curr_pos].second.first;
+        double new_fpr = individual[curr_node].roc_points[curr_pos].second.second;
+        
+        curr_sum_sensitivity += (new_sensitivity - old_sensitivity);
+        curr_sum_fpr += (new_fpr - old_fpr);
+        
+        ret.roc_points.push_back(make_pair(curr_thresh, make_pair(curr_sum_sensitivity / (res_cnt * 1.0), curr_sum_fpr / (res_cnt * 1.0))));
+        
+        if (uint(curr_pos) < individual[curr_node].roc_points.size() - 1)
+        {
+            pq.push(make_pair(individual[curr_node].roc_points[curr_pos + 1].first, make_pair(curr_node, curr_pos + 1)));
+        }
+    }
+    
+    ret.roc_auc = 0.0;
+    for (int i=0;i<res_cnt;i++)
+    {
+        ret.roc_auc += individual[i].roc_auc;
+    }
+    ret.roc_auc /= (res_cnt * 1.0);
+    
+    return ret;
+}
 
 run_result single_run(Classifier<vector<vector<double> >, bool> *C, vector<pair<vector<vector<double> >, bool> > &training_set, vector<pair<vector<vector<double> >, bool> > &test_set)
 {
@@ -165,101 +259,93 @@ run_result crossvalidate(Classifier<vector<vector<double> >, bool> *C, vector<pa
             if (i != j) curr_train.insert(curr_train.end(), folds[j].begin(), folds[j].end());
         }
         
+        printf("Starting crossvalidation step %d\n", i);
         individual[i] = single_run(C, curr_train, curr_test);
-    }
-
-    run_result ret;
-    ret.accuracy = 0.0;
-    ret.precision = 0.0;
-    ret.sensitivity = 0.0;
-    ret.specificity = 0.0;
-    ret.false_positive_rate = 0.0;
-    ret.negative_predictive_value = 0.0;
-    ret.false_discovery_rate = 0.0;
-    ret.mcc = 0.0;
-    ret.f1_score = 0.0;
-    
-    for (int i=0;i<fold_cnt;i++)
-    {
-        ret.accuracy += individual[i].accuracy;
-        ret.precision += individual[i].precision;
-        ret.sensitivity += individual[i].sensitivity;
-        ret.specificity += individual[i].specificity;
-        ret.false_positive_rate += individual[i].false_positive_rate;
-        ret.negative_predictive_value += individual[i].negative_predictive_value;
-        ret.false_discovery_rate += individual[i].false_discovery_rate;
-        ret.mcc += individual[i].mcc;
-        ret.f1_score += individual[i].f1_score;
-    
+        
         char cur_filename[150];
         sprintf(cur_filename, "results_%02d.out", i);
         dump_result(individual[i], true, cur_filename);
     }
     
-    ret.accuracy /= (fold_cnt * 1.0);
-    ret.precision /= (fold_cnt * 1.0);
-    ret.sensitivity /= (fold_cnt * 1.0);
-    ret.specificity /= (fold_cnt * 1.0);
-    ret.false_positive_rate /= (fold_cnt * 1.0);
-    ret.negative_predictive_value /= (fold_cnt * 1.0);
-    ret.false_discovery_rate /= (fold_cnt * 1.0);
-    ret.mcc /= (fold_cnt * 1.0);
-    ret.f1_score /= (fold_cnt * 1.0);
-    
-    priority_queue<pair<double, pair<int, int> > > pq;
-    
-    double start_point = individual[0].roc_points[0].first;
-    for (int i=0;i<fold_cnt;i++)
-    {
-        if (start_point > individual[i].roc_points[0].first)
-        {
-            start_point = individual[i].roc_points[0].first;
-        }
-        
-        pq.push(make_pair(individual[i].roc_points[1].first, make_pair(i, 1)));
-    }
-    
-    ret.roc_points.push_back(make_pair(start_point, make_pair(0.0, 0.0)));
-    double curr_sum_sensitivity = 0.0, curr_sum_fpr = 0.0;
-    
-    while (!pq.empty())
-    {
-        pair<double, pair<int, int> > curr_top = pq.top();
-        pq.pop();
-        
-        double curr_thresh = curr_top.first;
-        int curr_node = curr_top.second.first;
-        int curr_pos = curr_top.second.second;
-        
-        double old_sensitivity = individual[curr_node].roc_points[curr_pos - 1].second.first;
-        double old_fpr = individual[curr_node].roc_points[curr_pos - 1].second.second;
-        
-        double new_sensitivity = individual[curr_node].roc_points[curr_pos].second.first;
-        double new_fpr = individual[curr_node].roc_points[curr_pos].second.second;
-        
-        curr_sum_sensitivity += (new_sensitivity - old_sensitivity);
-        curr_sum_fpr += (new_fpr - old_fpr);
-        
-        ret.roc_points.push_back(make_pair(curr_thresh, make_pair(curr_sum_sensitivity / (fold_cnt * 1.0), curr_sum_fpr / (fold_cnt * 1.0))));
-        
-        if (uint(curr_pos) < individual[curr_node].roc_points.size() - 1)
-        {
-            pq.push(make_pair(individual[curr_node].roc_points[curr_pos + 1].first, make_pair(curr_node, curr_pos + 1)));
-        }
-    }
-    
-    ret.roc_auc = 0.0;
-    for (int i=0;i<fold_cnt;i++)
-    {
-        ret.roc_auc += individual[i].roc_auc;
-    }
-    ret.roc_auc /= (fold_cnt * 1.0);
+    run_result ret = mean_result(individual);
     
     char filename[101];
     sprintf(filename, "results_full.out");
     dump_result(ret, false, filename);
     
     return ret;
+}
+
+run_result single_noise_test(Classifier<vector<vector<double> >, bool> *C, vector<pair<vector<vector<double> >, bool> > &training_set, double noise_mean, double noise_stddev, int num_tests)
+{
+    printf("Performing a noise test, with the following parameters:\n");
+    printf("Mean: %.6lf, Standard Deviation: %.6lf, Number of tests: %d\n", noise_mean, noise_stddev, num_tests);
+    
+    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+    default_random_engine generator(seed);
+    normal_distribution<double> noise(noise_mean, noise_stddev);
+    
+    vector<run_result> individual;
+    individual.resize(num_tests);
+    for (int t=0;t<num_tests;t++)
+    {
+        vector<pair<vector<vector<double> >, bool> > noisy_training_set;
+        noisy_training_set.resize(training_set.size());
+        for (uint i=0;i<training_set.size();i++)
+        {
+            noisy_training_set[i].first.resize(training_set[i].first.size());
+            for (uint j=0;j<training_set[i].first.size();j++)
+            {
+                noisy_training_set[i].first[j].resize(training_set[i].first[j].size());
+                for (uint k=0;k<training_set[i].first[j].size();k++)
+                {
+                    noisy_training_set[i].first[j][k] = training_set[i].first[j][k] + noise(generator);
+                }
+            }
+            noisy_training_set[i].second = training_set[i].second;
+        }
+        
+        printf("Starting noise test #%d\n", t);
+        individual[t] = crossvalidate(C, noisy_training_set);
+    }
+    
+    run_result ret = mean_result(individual);
+    
+    char filename[101];
+    sprintf(filename, "results_noisy_full.out");
+    dump_result(ret, false, filename, noise_mean, noise_stddev);
+    
+    return ret;
+}
+
+void noise_test(Classifier<vector<vector<double> >, bool> *C, vector<pair<vector<vector<double> >, bool> > &training_set, double noise_mean_lo, double noise_mean_step, double noise_mean_hi, double noise_stddev_lo, double noise_stddev_step, double noise_stddev_hi, int num_tests)
+{
+    printf("Starting a full noise test, with the following parameters:\n");
+    printf("Mean: (%.6lf:%.6lf), step size: %.6lf\n", noise_mean_lo, noise_mean_hi, noise_mean_step);
+    printf("Standard Deviation: (%.6lf:%.6lf), step size: %.6lf\n", noise_stddev_lo, noise_stddev_hi, noise_stddev_step);
+    
+    int test_count = 0;
+    double mu = noise_mean_lo;
+    double sigma = noise_stddev_lo;
+    
+    do
+    {
+        do
+        {
+            char curr_test_fldr[101];
+            sprintf(curr_test_fldr, "noisy_test_%d", test_count);
+            mkdir(curr_test_fldr, 0775);
+            chdir(curr_test_fldr);
+            single_noise_test(C, training_set, mu, sigma, num_tests);
+            chdir("..");
+            sigma += noise_stddev_step;
+            test_count++;
+        } while (sigma <= noise_stddev_hi);
+        
+        mu += noise_mean_step;
+        sigma = noise_stddev_lo;
+    
+    } while (mu <= noise_mean_hi);
 }
 
 vector<pair<vector<vector<double> >, bool> > extract_data(char* filename)
@@ -298,11 +384,12 @@ vector<pair<vector<vector<double> >, bool> > extract_data(char* filename)
     return ret;
 }
 
-void dump_result(run_result &res, bool single_run, char* filename)
+void dump_result(run_result &res, bool single_run, char* filename, double noise_mean, double noise_stddev)
 {
     FILE *f = fopen(filename, "w");
     
     fprintf(f, "%s results:\n", (single_run ? "Single run" : "Crossvalidation"));
+    fprintf(f, "Noise parameters - mean : %.6lf, stddev: %.6lf\n", noise_mean, noise_stddev);
     
     if (single_run)
     {

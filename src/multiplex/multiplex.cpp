@@ -278,15 +278,17 @@ double** Multiplex::get_aggregate_matrix(bool normalise)
             if (i == j) ret[i][j] = 0.0;
             else
             {
+                bool cont_zero = false;
                 double h_mean_den = 0.0;
                 for (int k=0;k<L;k++)
                 {
                     for (int l=0;l<L;l++)
                     {
                         h_mean_den += 1.0 / G[k][l][i][j];
+                        if (G[k][l][i][j] == 0) cont_zero = true;
                     }
                 }
-                ret[i][j] = (1.0 * L * L) / h_mean_den;
+                ret[i][j] = (cont_zero ? 0 : ((1.0 * L * L) / h_mean_den));
             }
         }
     }
@@ -300,9 +302,12 @@ double** Multiplex::get_aggregate_matrix(bool normalise)
             {
                 sum += ret[i][j];
             }
-            for (int j=0;j<n;j++)
+            if (sum >= 1e-6)
             {
-                ret[i][j] /= sum;
+                for (int j=0;j<n;j++)
+                {
+                    ret[i][j] /= sum;
+                }
             }
         }
     }
@@ -608,7 +613,7 @@ void Multiplex::dump_muxviz_data(char *nodes_filename, char *base_layers_filenam
     printf("Done.\n");
 }
 
-vector<function<double(vector<double>)> > get_objectives()
-{
-    return toplevel -> extract_objectives();
-}
+//vector<function<double(vector<double>)> > get_objectives()
+//{
+//    return toplevel -> extract_objectives();
+//}
