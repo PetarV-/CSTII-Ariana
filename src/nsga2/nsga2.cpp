@@ -111,20 +111,49 @@ list<chromosome> find_nondominated_front(vector<chromosome> &P)
 vector<vector<chromosome> > fast_nondominated_sort(vector<chromosome> &P)
 {
     vector<vector<chromosome> > F;
-    while (!P.empty())
+    vector<chromosome> Q;
+    
+    vector<vector<int> > Sp;
+    vector<int> np;
+    Sp.resize(P.size());
+    np.resize(P.size());
+    for (uint i=0;i<P.size();i++)
     {
-        vector<chromosome> next_P;
-        list<chromosome> front = find_nondominated_front(P);
-        vector<chromosome> fi(front.begin(), front.end());
-        F.push_back(fi);
-        uint ii = 0;
-        for (uint i=0;i<P.size();i++)
+        Sp[i].clear();
+        np[i] = 0;
+        for (uint j=0;j<P.size();j++)
         {
-            if (ii < fi.size() && is_equal(P[i], fi[ii])) ii++;
-            else next_P.push_back(P[i]);
+            if (dominated_by(p, q)) Sp[i].push_back(j);
+            else if (dominated_by(q, p)) np[i]++;
         }
-        P = next_P;
+        if (np[i] == 0)
+        {
+            P[i].rank = 1;
+            Q.push_back(i);
+        }
     }
+    F.push_back(Q);
+    int ii = 1;
+    while (!Q.empty())
+    {
+        Q.clear();
+        for (uint i=0;i<F[ii-1].size();i++)
+        {
+            for (uint j=0;j<Sp[F[i]].size();j++)
+            {
+                int q = Sp[F[i]][j];
+                if (--np[q] == 0)
+                {
+                    P[q].rank = ii + 1;
+                    Q.push_back(q);
+                }
+            }
+        }
+        ii++;
+        if (Q.empty()) break;
+        F.push_back(Q);
+    }
+    
     return F;
 }
 
@@ -343,7 +372,6 @@ void iterate()
     while (main_population.size() + fronts[ii].size() <= uint(pop_size))
     {
         crowding_distance_assignment(fronts[ii]);
-        for (uint j=0;j<fronts[ii].size();j++) fronts[ii][j].rank = ii;
         main_population.insert(main_population.end(), fronts[ii].begin(), fronts[ii].end());
         ii++;
     }
@@ -351,7 +379,6 @@ void iterate()
     if (elements_needed > 0)
     {
         crowding_distance_assignment(fronts[ii]);
-        for (uint j=0;j<fronts[ii].size();j++) fronts[ii][j].rank = ii;
         sort(fronts[ii].begin(), fronts[ii].end());
         main_population.insert(main_population.end(), fronts[ii].begin(), fronts[ii].begin() + elements_needed);
     }
