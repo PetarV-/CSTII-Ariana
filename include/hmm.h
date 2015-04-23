@@ -34,7 +34,7 @@ public:
 class SimpleChainGMHMM
 {
 private:
-    int obs, sub_obs; // number of states and "sub-observations"
+    int obs; // number of states and "sub-observations"
     double **G; // sub-observation emission probabilites
     double *mu, *sigma; // means and variances for each sub-observation
     

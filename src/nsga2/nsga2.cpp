@@ -111,49 +111,61 @@ list<chromosome> find_nondominated_front(vector<chromosome> &P)
 vector<vector<chromosome> > fast_nondominated_sort(vector<chromosome> &P)
 {
     vector<vector<chromosome> > F;
-    vector<chromosome> Q;
     
     vector<vector<int> > Sp;
     vector<int> np;
+    vector<int> Q;
     Sp.resize(P.size());
     np.resize(P.size());
     for (uint i=0;i<P.size();i++)
     {
+        chromosome p = P[i];
         Sp[i].clear();
         np[i] = 0;
         for (uint j=0;j<P.size();j++)
         {
+            chromosome q = P[j];
             if (dominated_by(p, q)) Sp[i].push_back(j);
             else if (dominated_by(q, p)) np[i]++;
         }
-        if (np[i] == 0)
-        {
-            P[i].rank = 1;
-            Q.push_back(i);
-        }
+        if (np[i] == 0) Q.push_back(i);
     }
-    F.push_back(Q);
+    
+    vector<chromosome> Fi;
+    Fi.resize(Q.size());
+    for (uint i=0;i<Q.size();i++)
+    {
+        Fi[i] = P[Q[i]];
+        Fi[i].rank = 1;
+    }
+    F.push_back(Fi);
+    
     int ii = 1;
     while (!Q.empty())
     {
-        Q.clear();
-        for (uint i=0;i<F[ii-1].size();i++)
+        vector<int> R;
+        for (uint i=0;i<Q.size();i++)
         {
-            for (uint j=0;j<Sp[F[i]].size();j++)
+            for (uint j=0;j<Sp[Q[i]].size();j++)
             {
-                int q = Sp[F[i]][j];
-                if (--np[q] == 0)
-                {
-                    P[q].rank = ii + 1;
-                    Q.push_back(q);
-                }
+                int q = Sp[Q[i]][j];
+                if (--np[q] == 0) R.push_back(q);
             }
         }
         ii++;
-        if (Q.empty()) break;
-        F.push_back(Q);
+        if (R.empty()) break;
+        
+        Fi.resize(R.size());
+        for (uint i=0;i<R.size();i++)
+        {
+            Fi[i] = P[R[i]];
+            Fi[i].rank = ii;
+        }
+        F.push_back(Fi);
+        Q = R;
     }
     
+    P.clear();
     return F;
 }
 

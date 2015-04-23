@@ -14,7 +14,7 @@ do
 	echo "Testing on $test_name..."
 	make clean &> /dev/null
 	make OBJFILE="$testobj_dir/objectives_$test_name.cpp" &> /dev/null
-	$bin_dir/nsga2_tester "$testin_dir/sample_input_$test_name.in" "$testres_dir/result_$test_name.out" &> /dev/null
+$bin_dir/nsga2_tester "$testin_dir/sample_input_$test_name.in" "$testres_dir/result_$test_name.out" &> /dev/null
 	echo "Testing completed. Output written to test_results/result_$test_name.out"
 done
 
