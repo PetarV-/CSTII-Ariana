@@ -246,21 +246,6 @@ void GMHMM::baumwelch(vector<vector<double> > &Ys, int iterations, double tolera
             c[l] = get<1>(x);
             lhood += get<2>(x);
             beta[l] = backward(sorted_Ys[l], c[l]);
-            
-            /*
-            if (l == 0)
-            {
-                printf("Special alpha:\n");
-                for (uint t=0;t<sorted_Ys[l].size();t++)
-                {
-                    for (int i=0;i<n;i++)
-                    {
-                        printf("%lf ", alpha[l][t][i]);
-                    }
-                    printf("\n");
-                }
-            }
-            */
         }
         
         double **nextO = new double*[n];

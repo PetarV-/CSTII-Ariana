@@ -34,6 +34,12 @@ typedef unsigned long long llu;
 
 HMM::HMM(int n, int obs) : n(n), obs(obs)
 {
+    this -> pi = new double[n];
+    for (int i=0;i<n;i++)
+    {
+        this -> pi[i] = 1.0 / n;
+    }
+    
     this -> T = new double*[n];
     for (int i=0;i<n;i++)
     {
@@ -55,13 +61,22 @@ HMM::HMM(int n, int obs) : n(n), obs(obs)
     }
 }
     
-HMM::HMM(int n, int obs, double **T, double **P) : n(n), obs(obs)
+HMM::HMM(int n, int obs, double *pi, double **T, double **P) : n(n), obs(obs)
 {
+    double sum = 0.0;
+    this -> pi = new double[n];
+    for (int i=0;i<n;i++)
+    {
+        this -> pi[i] = pi[i];
+        sum += pi[i];
+    }
+    assert(fabs(sum - 1.0) < EPS);
+    
     this -> T = new double*[n];
     for (int i=0;i<n;i++)
     {
         this -> T[i] = new double[n];
-        double sum = 0.0;
+        sum = 0.0;
         for (int j=0;j<n;j++)
         {
             this -> T[i][j] = T[i][j];
@@ -74,7 +89,7 @@ HMM::HMM(int n, int obs, double **T, double **P) : n(n), obs(obs)
     for (int i=0;i<n;i++)
     {
         this -> P[i] = new double[obs];
-        double sum = 0.0;
+        sum = 0.0;
         for (int j=0;j<obs;j++)
         {
             this -> P[i][j] = P[i][j];
@@ -92,8 +107,7 @@ HMM::~HMM()
     for (int i=0;i<n;i++) delete[] P[i];
     delete[] P;
     
-    delete[] Arn;
-    delete[] Brn;
+    delete[] pi;
 }
 
 void HMM::forward_backward(vector<int> &Y)
@@ -104,7 +118,7 @@ void HMM::forward_backward(vector<int> &Y)
     A = new double*[tlen];
     Arn = new int[tlen];
     for (int i=0;i<tlen;i++) A[i] = new double[n];
-    for (int i=0;i<n;i++) A[0][i] = P[i][Y[0]];
+    for (int i=0;i<n;i++) A[0][i] = pi[i] * P[i][Y[0]];
     Arn[0] = 0;
     for (int t=1;t<tlen;t++)
     {
@@ -180,6 +194,31 @@ void HMM::forward_backward(vector<int> &Y)
     }
 }
 
+double** HMM::get_A()
+{
+    return A;
+}
+
+double** HMM::get_B()
+{
+    return B;
+}
+
+double* HMM::get_pi()
+{
+    return pi;
+}
+
+double** HMM::get_T()
+{
+    return T;
+}
+
+double** HMM::get_P()
+{
+    return P;
+}
+
 vector<int> HMM::viterbi(vector<int> &Y)
 {
     int tlen = Y.size();
@@ -193,7 +232,7 @@ vector<int> HMM::viterbi(vector<int> &Y)
     // initialisation
     for (int i=0;i<n;i++)
     {
-        V[0][i] = log(P[i][Y[0]]);
+        V[0][i] = log(pi[i]) + log(P[i][Y[0]]);
         prev[0][i] = 0;
     }
     
@@ -261,6 +300,7 @@ void HMM::baumwelch(vector<int> &Y)
     
     for (int i=0;i<n;i++)
     {
+        pi[i] = ((A[0][i] * B[0][i]) / likelihood) * powers[Arn[0] + Brn[0] - renorm + 6];
         QQ = 0.0;
         for (int k=0;k<obs;k++)
         {
@@ -292,39 +332,3 @@ void HMM::baumwelch(vector<int> &Y)
     
     P = nextP;
 }
-/*
-int main()
-{
-    // test
-    int n = 2;
-    int obs = 3;
-    
-    double **T = new double*[n];
-    for (int i=0;i<n;i++)
-    {
-        T[i] = new double[n];
-    }
-    T[0][0] = 0.7; T[0][1] = 0.3;
-    T[1][0] = 0.4; T[1][1] = 0.6;
-    
-    double **P = new double*[n];
-    for (int i=0;i<n;i++)
-    {
-        P[i] = new double[obs];
-    }
-    P[0][0] = 0.5; P[0][1] = 0.4; P[0][2] = 0.1;
-    P[1][0] = 0.1; P[1][1] = 0.3; P[1][2] = 0.6;
-    
-    HMM *x = new HMM(n, obs, T, P);
-    
-    vector<int> observations;
-    observations.push_back(0);
-    observations.push_back(1);
-    observations.push_back(2);
-    
-    vector<int> ret = x -> viterbi(observations);
-    
-    for (uint i=0;i<ret.size();i++) printf("%d ", ret[i]);
-    printf("\n");
-}
-*/

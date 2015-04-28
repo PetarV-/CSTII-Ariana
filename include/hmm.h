@@ -17,6 +17,7 @@ class HMM
 protected:
     int n; // number of nodes
     int obs; // number of observations
+    double *pi; // start-state probability vector
     double **T; // transition probability matrix
     double **P; // output probability matrix
     
@@ -27,8 +28,14 @@ protected:
 
 public:
     HMM(int n, int obs);
-    HMM(int n, int obs, double **T, double **P);
+    HMM(int n, int obs, double *pi, double **T, double **P);
     ~HMM();
+    
+    double** get_A();
+    double** get_B();
+    double* get_pi();
+    double** get_T();
+    double** get_P();
     
     void forward_backward(std::vector<int> &Y);
     std::vector<int> viterbi(std::vector<int> &Y);
