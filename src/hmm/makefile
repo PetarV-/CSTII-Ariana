@@ -8,5 +8,11 @@ hmm : hmm.cpp
 simple_chain_gmhmm : simple_chain_gmhmm.cpp
 	$(CC) $(CFLAGS) simple_chain_gmhmm.cpp -o ../../build/simple_chain_gmhmm.o
 
+gmhmm : gmhmm.cpp
+	$(CC) $(CFLAGS) gmhmm.cpp -o ../../build/gmhmm.o
+
+phi : phi.cpp
+	$(CC) $(CFLAGS) phi.cpp -o ../../build/phi.o
+
 clean :
 	-rm -f ../../build/*.o *~ hmm &> /dev/null

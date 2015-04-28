@@ -64,15 +64,6 @@ SimpleChainGMHMM::~SimpleChainGMHMM()
     delete[] sigma;
 }
 
-double gaussian_pdf(double x, double mean, double stdev)
-{
-    double E = x - mean;
-    E *= -E;
-    E /= 2 * stdev * stdev;
-    double ret = exp(E);
-    return ret / (stdev * sqrt(2 * M_PI));
-}
-
 double SimpleChainGMHMM::get_G(int x, int y)
 {
     return G[x][y];
