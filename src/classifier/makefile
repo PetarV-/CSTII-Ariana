@@ -11,6 +11,9 @@ classifier_multiplex_chain : classifier_multiplex_chain.cpp
 classifier_gmhmm : classifier_gmhmm.cpp
 	$(CC) $(CFLAGS) classifier_gmhmm.cpp -o ../../build/classifier_gmhmm.o
 
+classifier_multiplex_gmhmm : classifier_multiplex_gmhmm.cpp
+	$(CC) $(CFLAGS) classifier_multiplex_gmhmm.cpp -o ../../build/classifier_multiplex_gmhmm.o
+
 classifier_generic_single_layer : classifier_generic_single_layer.cpp
 	$(CC) $(CFLAGS) classifier_generic_single_layer.cpp -o ../../build/classifier_generic_single_layer.o
 

@@ -53,7 +53,7 @@ int main(int argc, char **argv)
     if (classifier_type == "gmhmm-single-chain") C = new SingleChainClassifier(gene_count);
     else if (classifier_type == "gmhmm-multiplex-chain") C = new MultiplexChainClassifier(gene_count, type_count);
     else if (classifier_type == "gmhmm-single") C = new GMHMMClassifier(gene_count);
-    else if (classifier_type == "gmhmm-multiplex");
+    else if (classifier_type == "gmhmm-multiplex") C = new MultiplexGMHMMClassifier(gene_count, type_count);
     else if (classifier_type == "general-single") C = new GenericSingleLayerClassifier(gene_count);
     else if (classifier_type == "general-multiplex") C = new GenericMultiplexClassifier(gene_count, type_count);
     else

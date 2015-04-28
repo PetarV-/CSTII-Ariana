@@ -35,6 +35,24 @@ public:
     void baumwelch(std::vector<int> &Y);
 };
 
+class SimpleChainGMHMM
+{
+private:
+    int obs; // number of states and "sub-observations"
+    double **G; // sub-observation emission probabilites
+    double *mu, *sigma; // means and variances for each sub-observation
+    
+public:
+    SimpleChainGMHMM(int obs);
+    SimpleChainGMHMM(int obs, double **G, double *mu, double *sigma);
+    ~SimpleChainGMHMM();
+    
+    double get_G(int x, int y);
+    double get_probability(int obs_id, double x);
+    void train(std::vector<std::vector<double> > &train_set);
+    double log_likelihood(std::vector<double> &test_data);
+};
+
 class GMHMM
 {
 private:
@@ -53,26 +71,9 @@ public:
     double** backward(std::vector<std::pair<double, int> > &Y, double *c);
     void baumwelch(std::vector<std::vector<double> > &Ys, int iterations, double tolerance);
     
+    double get_pi(int x);
     double get_T(int i, int j);
     double get_O(int x, int y);
-    double get_probability(int obs_id, double x);
-    void train(std::vector<std::vector<double> > &train_set);
-    double log_likelihood(std::vector<double> &test_data);
-};
-
-class SimpleChainGMHMM
-{
-private:
-    int obs; // number of states and "sub-observations"
-    double **G; // sub-observation emission probabilites
-    double *mu, *sigma; // means and variances for each sub-observation
-    
-public:
-    SimpleChainGMHMM(int obs);
-    SimpleChainGMHMM(int obs, double **G, double *mu, double *sigma);
-    ~SimpleChainGMHMM();
-    
-    double get_G(int x, int y);
     double get_probability(int obs_id, double x);
     void train(std::vector<std::vector<double> > &train_set);
     double log_likelihood(std::vector<double> &test_data);

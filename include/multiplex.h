@@ -67,19 +67,18 @@ public:
     void dump_muxviz_data(char *nodes_filename, char *base_layers_filename);
 };
 
-class HMMGeneralMultiplex
+class MultiplexGMHMM
 {
 private:
-    int n;
-    int obs;
+    int n, obs;
     int L;
-    std::vector<HMM*> layers;
+    std::vector<GMHMM*> layers;
     double **omega;
     
     std::vector<std::function<double(std::vector<double>)> > objectives;
 public:
-    HMMGeneralMultiplex(int n, int obs, int L);
-    ~HMMGeneralMultiplex();
+    MultiplexGMHMM(int n, int obs, int L);
+    ~MultiplexGMHMM();
     
     void set_omega(double **omega);
     void train(std::vector<std::vector<std::vector<double> > > &train_set);

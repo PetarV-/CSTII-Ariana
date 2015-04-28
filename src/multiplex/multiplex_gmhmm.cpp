@@ -32,14 +32,14 @@ typedef unsigned int uint;
 typedef long long lld;
 typedef unsigned long long llu;
 
-static HMMChainMultiplex *toplevel;
+static MultiplexGMHMM *toplevel;
 
-HMMChainMultiplex::HMMChainMultiplex(int obs, int L) : obs(obs), L(L)
+MultiplexGMHMM::MultiplexGMHMM(int n, int obs, int L) : n(n), obs(obs), L(L)
 {
     this -> layers.resize(L);
     for (int i=0;i<L;i++)
     {
-        this -> layers[i] = new SimpleChainGMHMM(obs);
+        this -> layers[i] = new GMHMM(n, obs);
     }
     
     this -> omega = new double*[L];
@@ -53,14 +53,14 @@ HMMChainMultiplex::HMMChainMultiplex(int obs, int L) : obs(obs), L(L)
     }
 }
 
-HMMChainMultiplex::~HMMChainMultiplex()
+MultiplexGMHMM::~MultiplexGMHMM()
 {
     for (int i=0;i<L;i++) delete layers[i];
     for (int i=0;i<L;i++) delete[] omega[i];
     delete[] omega;
 }
 
-void HMMChainMultiplex::set_omega(double **omega)
+void MultiplexGMHMM::set_omega(double **omega)
 {
     for (int i=0;i<L;i++)
     {
@@ -77,7 +77,7 @@ void HMMChainMultiplex::set_omega(double **omega)
     }
 }
 
-void HMMChainMultiplex::train(vector<vector<vector<double> > > &train_set)
+void MultiplexGMHMM::train(vector<vector<vector<double> > > &train_set)
 {
     // Train all the layers individually (as before)
     for (int l=0;l<L;l++)
@@ -192,17 +192,24 @@ void HMMChainMultiplex::train(vector<vector<vector<double> > > &train_set)
     }
 }
 
-double HMMChainMultiplex::log_likelihood(vector<vector<double> > &test_data)
+double MultiplexGMHMM::log_likelihood(vector<vector<double> > &test_data)
 {
     vector<pair<vector<double>, int> > sorted_data;
-    sorted_data.resize(obs);
-    for (int i=0;i<obs;i++) sorted_data[i] = make_pair(test_data[i], i);
+    sorted_data.resize(test_data.size());
+    for (uint i=0;i<test_data.size();i++) sorted_data[i] = make_pair(test_data[i], i);
     sort(sorted_data.begin(), sorted_data.end(), compare_euclidean);
     
     double ret = 0.0;
     
-    double **A = new double*[obs];
-    for (int i=0;i<obs;i++) A[i] = new double[L];
+    double ***A = new double**[obs];
+    for (uint i=0;i<test_data.size();i++)
+    {
+        A[i] = new double*[L];
+        for (int j=0;j<L;j++)
+        {
+            A[i][j] = new double[n];
+        }
+    }
     
     double *pi = new double[L];
     double pi_sum = 0.0;
@@ -214,66 +221,95 @@ double HMMChainMultiplex::log_likelihood(vector<vector<double> > &test_data)
     for (int i=0;i<L;i++)
     {
         double curr_type_val = sorted_data[0].first[i];
-        double curr_g = layers[i] -> get_G(0, first_gene);
         double curr_prob = layers[i] -> get_probability(first_gene, curr_type_val);
-        A[0][i] = pi[i] * curr_g * curr_prob;
-        init_sum += A[0][i];
+        for (int j=0;j<n;j++)
+        {
+            double curr_pi = layers[i] -> get_pi(j);
+            double curr_o = layers[i] -> get_O(j, first_gene);
+            A[0][i][j] = pi[i] * curr_pi * curr_o * curr_prob;
+            init_sum += A[0][i][j];
+        }
     }
     
     for (int i=0;i<L;i++)
     {
-        A[0][i] /= init_sum;
+        for (int j=0;j<n;j++)
+        {
+            A[0][i][j] /= init_sum;
+        }
     }
     ret += log(init_sum);
     
-    for (int t=1;t<obs;t++)
+    for (uint t=1;t<test_data.size();t++)
     {
         double fullsum = 0.0;
         int curr_gene = sorted_data[t].second;
         
-        for (int j=0;j<L;j++)
+        for (int i=0;i<L;i++)
         {
-            double sum = 0.0;
-            double curr_type_val = sorted_data[t].first[j];
-            double curr_g = layers[j] -> get_G(t, curr_gene);
-            double curr_prob = layers[j] -> get_probability(curr_gene, curr_type_val);
+            double curr_type_val = sorted_data[t].first[i];
+            double curr_prob = layers[i] -> get_probability(curr_gene, curr_type_val);
             
-            for (int i=0;i<L;i++)
+            for (int j=0;j<n;j++)
             {
-                sum += A[t-1][i] * omega[i][j] * curr_g * curr_prob;
+                double sum = 0.0;
+                double curr_g = layers[i] -> get_O(j, curr_gene);
+                
+                for (int ii=0;ii<L;ii++)
+                {
+                    if (ii == i)
+                    {
+                        for (int jj=0;jj<n;jj++)
+                        {
+                            double curr_t = layers[i] -> get_T(jj, j);
+                            sum += A[t-1][ii][jj] * omega[ii][i] * curr_t * curr_g * curr_prob;
+                        }
+                    }
+                    else sum += A[t-1][ii][j] * omega[ii][i] * curr_g * curr_prob;
+                }
+                
+                A[t][i][j] = sum;
+                fullsum += sum;
             }
-            
-            A[t][j] = sum;
-            fullsum += sum;
         }
         
-        for (int j=0;j<L;j++)
+        for (int i=0;i<L;i++)
         {
-            A[t][j] /= fullsum;
+            for (int j=0;j<n;j++)
+            {
+                A[t][i][j] /= fullsum;
+            }
         }
         
         ret += log(fullsum);
     }
     
-    for (int i=0;i<obs;i++) delete[] A[i];
+    for (int i=0;i<obs;i++)
+    {
+        for (int j=0;j<L;j++)
+        {
+            delete[] A[i][j];
+        }
+        delete[] A[i];
+    }
     delete[] A;
     delete[] pi;
     
     return ret;
 }
 
-vector<function<double(vector<double>)> > HMMChainMultiplex::extract_objectives()
+vector<function<double(vector<double>)> > MultiplexGMHMM::extract_objectives()
 {
     return objectives;
 }
 
-void HMMChainMultiplex::dump_muxviz_data(char *nodes_filename, char *base_layers_filename)
+void MultiplexGMHMM::dump_muxviz_data(char *nodes_filename, char *base_layers_filename)
 {
     FILE *f = fopen(nodes_filename, "w");
     
     fprintf(f, "nodeID nodeX nodeY\n");
     
-    for (int i=1;i<=obs;i++)
+    for (int i=1;i<=n;i++)
     {
         fprintf(f, "%d %d %d\n", i, i, 0);
     }
@@ -287,9 +323,12 @@ void HMMChainMultiplex::dump_muxviz_data(char *nodes_filename, char *base_layers
         char curr_lyr_filename[150];
         sprintf(curr_lyr_filename, "%s_%d", base_layers_filename, i+1);
         FILE *g = fopen(curr_lyr_filename, "w");
-        for (int j=1;j<obs;j++)
+        for (int j=1;j<=n;j++)
         {
-            fprintf(g, "%d %d %lf\n", j, j+1, omega[i][i]);
+            for (int k=1;k<=n;k++)
+            {
+                fprintf(g, "%d %d %lf\n", j, k, omega[i][i] * layers[i] -> get_T(j-1, k-1));
+            }
         }
         fclose(g);
         printf("Layer %d data successfully written to %s.\n", i+1, curr_lyr_filename);
@@ -298,7 +337,7 @@ void HMMChainMultiplex::dump_muxviz_data(char *nodes_filename, char *base_layers
     printf("Done.\n");
 }
 
-//vector<function<double(vector<double>)> > get_objectives()
-//{
-//    return toplevel -> extract_objectives();
-//}
+vector<function<double(vector<double>)> > get_objectives()
+{
+    return toplevel -> extract_objectives();
+}

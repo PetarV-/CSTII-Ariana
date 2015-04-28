@@ -1,4 +1,4 @@
-OBJS = ../../build/classifier_evaluator.o ../../build/classifier_single_chain.o ../../build/classifier_multiplex_chain.o ../../build/classifier_gmhmm.o ../../build/classifier_generic_single_layer.o ../../build/classifier_generic_multiplex.o ../../build/simple_chain_gmhmm.o ../../build/hmm_chain_multiplex.o ../../build/gmhmm.o ../../build/layers.o ../../build/multiplex.o ../../build/nsga2.o ../../build/phi.o ../../build/vector_cmp.o ../../build/matrix_lib.o ../../build/simple_tester.o
+OBJS = ../../build/classifier_evaluator.o ../../build/classifier_single_chain.o ../../build/classifier_multiplex_chain.o ../../build/classifier_gmhmm.o ../../build/classifier_multiplex_gmhmm.o ../../build/classifier_generic_single_layer.o ../../build/classifier_generic_multiplex.o ../../build/simple_chain_gmhmm.o ../../build/hmm_chain_multiplex.o ../../build/gmhmm.o ../../build/multiplex_gmhmm.o ../../build/layers.o ../../build/multiplex.o ../../build/nsga2.o ../../build/phi.o ../../build/vector_cmp.o ../../build/matrix_lib.o ../../build/simple_tester.o
 CC = g++ -I../../include
 DEBUG = -g
 CFLAGS = -std=c++11 -O3 -Wall -Wextra -Werror -Weffc++ -Wstrict-aliasing --pedantic -c $(DEBUG)
@@ -18,6 +18,9 @@ simple_tester : $(OBJS)
 ../../build/classifier_gmhmm.o :
 	$(MAKE) -C ../../src/classifier/ classifier_gmhmm
 
+../../build/classifier_multiplex_gmhmm.o :
+	$(MAKE) -C ../../src/classifier/ classifier_multiplex_gmhmm
+
 ../../build/classifier_generic_single_layer.o :
 	$(MAKE) -C ../../src/classifier/ classifier_generic_single_layer
 
@@ -32,6 +35,9 @@ simple_tester : $(OBJS)
 
 ../../build/gmhmm.o :
 	$(MAKE) -C ../../src/hmm/ gmhmm
+
+../../build/multiplex_gmhmm.o :
+	$(MAKE) -C ../../src/multiplex/ multiplex_gmhmm
 
 ../../build/layers.o :
 	$(MAKE) -C ../../src/layers/ layers

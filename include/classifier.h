@@ -77,6 +77,26 @@ public:
     std::vector<double> get_thresholds();
 };
 
+class MultiplexGMHMMClassifier : public Classifier<std::vector<std::vector<double> >, bool>
+{
+private:
+    int gene_count;
+    int type_count;
+    MultiplexGMHMM* patient_model;
+    MultiplexGMHMM* normal_model;
+    
+    std::vector<double> thresholds;
+    
+public:
+    MultiplexGMHMMClassifier(int gene_count, int type_count);
+    ~MultiplexGMHMMClassifier();
+    
+    void train(std::vector<std::pair<std::vector<std::vector<double> >, bool> > &training_set);
+    bool classify(std::vector<std::vector<double> > &test_data);
+    
+    std::vector<double> get_thresholds();
+};
+
 class GenericSingleLayerClassifier : public Classifier<std::vector<std::vector<double> >, bool>
 {
 private:

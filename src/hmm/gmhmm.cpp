@@ -380,6 +380,11 @@ void GMHMM::baumwelch(vector<vector<double> > &Ys, int iterations, double tolera
     }
 }
 
+double GMHMM::get_pi(int x)
+{
+    return this -> pi[x];
+}
+
 double GMHMM::get_T(int i, int j)
 {
     return this -> T[i][j];

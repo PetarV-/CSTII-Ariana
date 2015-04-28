@@ -285,6 +285,8 @@ run_result single_noise_test(Classifier<vector<vector<double> >, bool> *C, vecto
     default_random_engine generator(seed);
     normal_distribution<double> noise(noise_mean, noise_stddev);
     
+    if (noise_mean == 0.0 && noise_stddev == 0.0) num_tests = 1;
+    
     vector<run_result> individual;
     individual.resize(num_tests);
     for (int t=0;t<num_tests;t++)
