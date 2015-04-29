@@ -337,7 +337,7 @@ void MultiplexGMHMM::dump_muxviz_data(char *nodes_filename, char *base_layers_fi
     printf("Done.\n");
 }
 
-vector<function<double(vector<double>)> > get_objectives()
-{
-    return toplevel -> extract_objectives();
-}
+//vector<function<double(vector<double>)> > get_objectives()
+//{
+//    return toplevel -> extract_objectives();
+//}

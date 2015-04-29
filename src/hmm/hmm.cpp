@@ -14,12 +14,11 @@
 #include <set>
 #include <map>
 #include <complex>
+#include <tuple>
 
 #include <hmm.h>
 
 #define EPS 1e-3
-#define LIM 1e-20
-#define INF 1e20
 
 #define DPRINTC(C) printf(#C " = %c\n", (C))
 #define DPRINTS(S) printf(#S " = %s\n", (S))
@@ -110,98 +109,190 @@ HMM::~HMM()
     delete[] pi;
 }
 
-void HMM::forward_backward(vector<int> &Y)
+tuple<double**, double*, double> HMM::forward(vector<int> &Y)
 {
-    int tlen = Y.size();
-        
-    // forward
-    A = new double*[tlen];
-    Arn = new int[tlen];
-    for (int i=0;i<tlen;i++) A[i] = new double[n];
-    for (int i=0;i<n;i++) A[0][i] = pi[i] * P[i][Y[0]];
-    Arn[0] = 0;
-    for (int t=1;t<tlen;t++)
+    int Ti = Y.size();
+    
+    double **alpha = new double*[Ti];
+    for (int i=0;i<Ti;i++)
     {
-        double fullsum = 0.0;
-        for (int j=0;j<n;j++)
-        {
-            double sum = 0.0;
-            for (int i=0;i<n;i++)
-            {
-                sum += A[t-1][i] * T[i][j] * P[j][Y[t]];
-            }
-            A[t][j] = sum;
-            fullsum += sum;
-        }
-        Arn[t] = Arn[t-1];
-        if (fullsum < LIM)
-        {
-            // renormalise as necessary
-            Arn[t]++;
-            for (int j=0;j<n;j++) A[t][j] *= INF;
-        }
+        alpha[i] = new double[n];
     }
-        
-    // backward
-    B = new double*[tlen];
-    Brn = new int[tlen];
-    for (int i=0;i<tlen;i++) B[i] = new double[n];
-    for (int i=0;i<n;i++) B[tlen-1][i] = 1.0;
-    Brn[tlen-1] = 0;
-    for (int t=tlen-2;t>=0;t--)
+    double *c = new double[Ti];
+    
+    double sum = 0.0;
+    for (int i=0;i<n;i++)
     {
-        double fullsum = 0.0;
+        alpha[0][i] = pi[i] * P[i][Y[0]];
+        sum += alpha[0][i];
+    }
+    c[0] = 1.0 / sum;
+    for (int i=0;i<n;i++)
+    {
+        alpha[0][i] /= sum;
+    }
+    
+    for (int t=1;t<Ti;t++)
+    {
+        sum = 0.0;
         for (int i=0;i<n;i++)
         {
-            double sum = 0.0;
+            alpha[t][i] = 0.0;
             for (int j=0;j<n;j++)
             {
-                sum += T[i][j] * P[j][Y[t+1]] * B[t+1][j];
+                alpha[t][i] += alpha[t-1][j] * T[j][i];
             }
-            B[t][i] = sum;
-            fullsum += sum;
+            alpha[t][i] *= P[i][Y[t]];
+            sum += alpha[t][i];
         }
-        Brn[t] = Brn[t+1];
-        if (fullsum < LIM)
-        {
-            // renormalise as necessary
-            Brn[t]++;
-            for (int j=0;j<n;j++) B[t][j] *= INF;
-        }
-    }
-    
-    // likelihood
-    likelihood = 0.0;
-    for (int i=0;i<n;i++) likelihood += A[0][i] * B[0][i];
-    renorm = Arn[0] + Brn[0];
-    while (likelihood < LIM)
-    {
-        likelihood *= INF;
-        renorm++;
-    }
-    
-    Pst = new double*[tlen];
-    for (int i=0;i<tlen;i++) Pst[i] = new double[n];
-    for (int t=0;t<tlen;t++)
-    {
-        double sum = 0.0;
+        
+        c[t] = 1.0 / sum;
         for (int i=0;i<n;i++)
         {
-            Pst[t][i] = A[t][i] * B[t][i];
-            sum += Pst[t][i];
+            alpha[t][i] /= sum;
         }
-        for (int i=0;i<n;i++) Pst[t][i] /= sum;
     }
+    
+    double log_L = 0.0;
+    for (int i=0;i<Ti;i++) log_L -= log(c[i]);
+    
+    return make_tuple(alpha, c, log_L);
 }
 
-double** HMM::get_A()
+double** HMM::backward(vector<int> &Y, double *c)
 {
-    return A;
+    int Ti = Y.size();
+    
+    double **beta = new double*[Ti];
+    for (int i=0;i<Ti;i++)
+    {
+        beta[i] = new double[n];
+    }
+    for (int i=0;i<n;i++) beta[Ti-1][i] = 1.0;
+    
+    for (int t=Ti-2;t>=0;t--)
+    {
+        for (int i=0;i<n;i++)
+        {
+            beta[t][i] = 0.0;
+            for (int j=0;j<n;j++)
+            {
+                beta[t][i] += T[i][j] * P[j][Y[t+1]] * beta[t+1][j];
+            }
+            beta[t][i] *= c[t+1];
+        }
+    }
+    
+    return beta;
 }
 
-double** HMM::get_B()
+void HMM::baumwelch(vector<vector<int> > &Ys, int iterations, double tolerance)
 {
-    return B;
+    double ***alpha = new double**[Ys.size()];
+    double ***beta = new double**[Ys.size()];
+    double **c = new double*[Ys.size()];
+    
+    double PP, QQ;
+    
+    double lhood = 0.0;
+    double oldlhood = 0.0;
+    
+    for (int iter=0;iter<iterations;iter++)
+    {
+        lhood = 0.0;
+        
+        for (uint l=0;l<Ys.size();l++)
+        {
+            tuple<double**, double*, double> x = forward(Ys[l]);
+            alpha[l] = get<0>(x);
+            c[l] = get<1>(x);
+            lhood += get<2>(x);
+            beta[l] = backward(Ys[l], c[l]);
+        }
+        
+        double **nextO = new double*[n];
+        for (int i=0;i<n;i++) nextO[i] = new double[obs];
+        
+        for (int i=0;i<n;i++)
+        {
+            pi[i] = 0.0;
+            for (uint l=0;l<Ys.size();l++)
+            {
+                pi[i] += alpha[l][0][i] * beta[l][0][i];
+            }
+            pi[i] /= Ys.size();
+            
+            QQ = 0.0;
+            
+            for (int k=0;k<obs;k++)
+            {
+                nextO[i][k] = 0.0;
+            }
+            
+            for (uint l=0;l<Ys.size();l++)
+            {
+                for (uint t=0;t<Ys[l].size()-1;t++)
+                {
+                    double curr = alpha[l][t][i] * beta[l][t][i];
+                    QQ += curr;
+                    nextO[i][Ys[l][t]] += curr;
+                }
+            }
+            
+            for (int j=0;j<n;j++)
+            {
+                PP = 0.0;
+                for (uint l=0;l<Ys.size();l++)
+                {
+                    for (uint t=0;t<Ys[l].size()-1;t++)
+                    {
+                        PP += alpha[l][t][i] * P[j][Ys[l][t+1]] * beta[l][t+1][j] * c[l][t+1];
+                    }
+                }
+                T[i][j] *= PP / QQ;
+            }
+            
+            for (uint l=0;l<Ys.size();l++)
+            {
+                int lim = Ys[l].size() - 1;
+                double curr = alpha[l][lim][i] * beta[l][lim][i];
+                QQ += curr;
+                nextO[i][Ys[l][lim]] += curr;
+            }
+            
+            for (int k=0;k<obs;k++)
+            {
+                nextO[i][k] /= QQ;
+            }
+        }
+        
+        for (uint l=0;l<Ys.size();l++)
+        {
+            for (uint t=0;t<Ys[l].size();t++)
+            {
+                delete[] alpha[l][t];
+                delete[] beta[l][t];
+            }
+            delete[] alpha[l];
+            delete[] beta[l];
+            delete[] c[l];
+        }
+        
+        for (int i=0;i<n;i++)
+        {
+            delete[] P[i];
+        }
+        delete[] P;
+        
+        P = nextO;
+        
+        if (fabs(lhood - oldlhood) < tolerance)
+        {
+            break;
+        }
+        
+        oldlhood = lhood;
+    }
 }
 
 double* HMM::get_pi()
@@ -282,53 +373,4 @@ vector<int> HMM::viterbi(vector<int> &Y)
     delete[] prev;
     
     return ret;
-}
-
-void HMM::baumwelch(vector<int> &Y)
-{
-    forward_backward(Y);
-        
-    int tlen = Y.size();
-        
-    double **nextP = new double*[n];
-    for (int i=0;i<n;i++) nextP[i] = new double[obs];
-        
-    double powers[10];
-    for (int i=0;i<10;i++) powers[i] = pow(LIM, i-6);
-        
-    double PP, QQ;
-    
-    for (int i=0;i<n;i++)
-    {
-        pi[i] = ((A[0][i] * B[0][i]) / likelihood) * powers[Arn[0] + Brn[0] - renorm + 6];
-        QQ = 0.0;
-        for (int k=0;k<obs;k++)
-        {
-            nextP[i][k] = 0.0;
-        }
-        for (int t=0;t<tlen-1;t++)
-        {
-            double curr = ((A[t][i] * B[t][i]) / likelihood) * powers[Arn[t] + Brn[t] - renorm + 6];
-            QQ += curr;
-            nextP[i][Y[t]] += curr;
-        }
-        for (int j=0;j<n;j++)
-        {
-            PP = 0.0;
-            for (int t=0;t<tlen-1;t++)
-            {
-                PP += A[t][i] * P[j][Y[t+1]] * B[t+1][j] * powers[Arn[t] + Brn[t] - renorm + 6] / likelihood;
-            }
-            T[i][j] *= PP / QQ;
-        }
-        for (int k=0;k<obs;k++)
-        {
-            nextP[i][k] /= QQ;
-        }
-    }
-    
-    for (int i=0;i<n;i++) delete[] P[i];
-    delete[] P;
-    
-    P = nextP;
 }

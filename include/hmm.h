@@ -20,26 +20,20 @@ protected:
     double *pi; // start-state probability vector
     double **T; // transition probability matrix
     double **P; // output probability matrix
-    
-    double **A, **B, **Pst; // alpha, beta, state prob. matrices
-    int *Arn, *Brn; // how many times have we renormalised A, B
-    int renorm;
-    double likelihood;
 
 public:
     HMM(int n, int obs);
     HMM(int n, int obs, double *pi, double **T, double **P);
     ~HMM();
     
-    double** get_A();
-    double** get_B();
     double* get_pi();
     double** get_T();
     double** get_P();
     
-    void forward_backward(std::vector<int> &Y);
+    std::tuple<double**, double*, double> forward(std::vector<int> &Y);
+    double** backward(std::vector<int> &Y, double *c);
     std::vector<int> viterbi(std::vector<int> &Y);
-    void baumwelch(std::vector<int> &Y);
+    void baumwelch(std::vector<std::vector<int> > &Ys, int iterations, double tolerance);
 };
 
 class SimpleChainGMHMM
