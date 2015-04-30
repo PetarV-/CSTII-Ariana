@@ -133,16 +133,6 @@ void SimpleGraphLayer::train(vector<vector<double> > &train_set)
             G[i][j] /= sum;
         }
     }
-    
-    //printf("FULL LAYER MATRIX\n");
-    //for (int i=0;i<n;i++)
-    //{
-    //    for (int j=0;j<n;j++)
-    //    {
-    //        printf("%lf ", G[i][j]);
-    //    }
-    //    printf("\n");
-    //}
 }
 
 double SimpleGraphLayer::log_likelihood(vector<double> &test_data)
