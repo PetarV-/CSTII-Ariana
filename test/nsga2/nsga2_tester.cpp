@@ -14,6 +14,7 @@
 #include <set>
 #include <map>
 #include <complex>
+#include <functional>
 
 #include <nsga2.h>
 
@@ -37,10 +38,38 @@ int main(int argc, char **argv)
         return -1;
     }
     
-    printf("Running NSGA-II...\n");
-    NSGAII nsga2;
+    printf("Preparing input parameters...\n");
     
-    vector<chromosome> final_generation = nsga2.optimise(argv[1], get_objectives());
+    // Prepare the input parameters
+    FILE *f = fopen(argv[1], "r");
+    
+    nsga2_params params;
+    fscanf(f, "%d", &params.pop_size);
+    fscanf(f, "%d", &params.ft_size);
+    fscanf(f, "%d", &params.obj_size);
+    fscanf(f, "%d", &params.generations);
+    fscanf(f, "%lf", &params.p_crossover);
+    fscanf(f, "%lf", &params.p_mutation);
+    fscanf(f, "%lf", &params.di_crossover);
+    fscanf(f, "%lf", &params.di_mutation);
+    
+    params.var_lims.resize(params.ft_size);
+    for (int i=0;i<params.ft_size;i++)
+    {
+        double x, y;
+        fscanf(f, "%lf%lf", &x, &y);
+        params.var_lims[i] = make_pair(x, y);
+    }
+    
+    fclose(f);
+    
+    
+    printf("Running NSGA-II...\n");
+    
+    // Run the algorithm
+    NSGAII nsga2;
+    vector<function<double(vector<double>)> > objs = get_objectives();
+    vector<chromosome> final_generation = nsga2.optimise(params, objs);
     
     printf("Extracting Pareto front...\n");
     
@@ -56,8 +85,8 @@ int main(int argc, char **argv)
     {
         chromosome cur = (*it);
         fprintf(g, "Chromosome id %d: (", ii++);
-        for (int i=0;i<get_ft_size();i++) fprintf(g, (i == get_ft_size() - 1) ? "%lf) -> (" : "%lf, ", cur.features[i]);
-        for (int i=0;i<get_obj_size();i++) fprintf(g, (i == get_obj_size() - 1) ? "%lf)\n" : "%lf, ", cur.values[i]);
+        for (int i=0;i<nsga2.get_ft_size();i++) fprintf(g, (i == nsga2.get_ft_size() - 1) ? "%lf) -> (" : "%lf, ", cur.features[i]);
+        for (int i=0;i<nsga2.get_obj_size();i++) fprintf(g, (i == nsga2.get_obj_size() - 1) ? "%lf)\n" : "%lf, ", cur.values[i]);
     }
     
     fprintf(g, "===========================\n");
@@ -66,8 +95,8 @@ int main(int argc, char **argv)
     {
         chromosome cur = final_generation[jj];
         fprintf(g, "Chromosome id %d: (", jj++);
-        for (int i=0;i<get_ft_size();i++) fprintf(g, (i == get_ft_size() - 1) ? "%lf) -> (" : "%lf, ", cur.features[i]);
-        for (int i=0;i<get_obj_size();i++) fprintf(g, (i == get_obj_size() - 1) ? "%lf)\n" : "%lf, ", cur.values[i]);
+        for (int i=0;i<nsga2.get_ft_size();i++) fprintf(g, (i == nsga2.get_ft_size() - 1) ? "%lf) -> (" : "%lf, ", cur.features[i]);
+        for (int i=0;i<nsga2.get_obj_size();i++) fprintf(g, (i == nsga2.get_obj_size() - 1) ? "%lf)\n" : "%lf, ", cur.values[i]);
     }
     
     printf("Pareto front extracted. Results saved in %s.\n", argv[2]);

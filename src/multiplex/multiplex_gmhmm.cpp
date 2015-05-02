@@ -116,33 +116,24 @@ void MultiplexGMHMM::train(vector<vector<vector<double> > > &train_set)
     }
     
     // Prepare the input parameters for NSGA-II
-    string filename = "param.in";
-    const int pop_size = 100;
-    const int ft_size = L * L;
-    const int obj_size = train_set.size();
-    const int generations = 250;
-    const double p_crossover = 0.9;
-    const double p_mutation = 1.0 / ft_size;
-    const double di_crossover = 20.0;
-    const double di_mutation = 20.0;
-    
-    FILE *f = fopen(filename.c_str(), "w");
-    fprintf(f, "%d\n", pop_size);
-    fprintf(f, "%d\n", ft_size);
-    fprintf(f, "%d\n", obj_size);
-    fprintf(f, "%d\n", generations);
-    fprintf(f, "%lf\n%lf\n", p_crossover, p_mutation);
-    fprintf(f, "%lf\n%lf\n", di_crossover, di_mutation);
-    for (int i=0;i<ft_size;i++)
+    nsga2_params params;
+    params.pop_size = 100;
+    params.ft_size = L * L;
+    params.obj_size = train_set.size();
+    params.generations = 250;
+    params.p_crossover = 0.9;
+    params.p_mutation = 1.0 / params.ft_size;
+    params.di_crossover = 20.0;
+    params.di_mutation = 20.0;
+    params.var_lims.resize(params.ft_size);
+    for (int i=0;i<params.ft_size;i++)
     {
-        fprintf(f, "0.000001 1.0\n");
+        params.var_lims[i] = make_pair(1e-6, 1.0);
     }
-    
-    fclose(f);
     
     // Run the algorithm
     NSGAII nsga2;
-    vector<chromosome> candidates = nsga2.optimise((char*)filename.c_str(), objectives);
+    vector<chromosome> candidates = nsga2.optimise(params, objectives);
     
     // Evaluate the best choice of omega
     int best = -1;

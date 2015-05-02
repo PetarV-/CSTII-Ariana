@@ -25,6 +25,21 @@ struct chromosome
     }
 };
 
+struct nsga2_params
+{
+    int pop_size;
+    int ft_size;
+    int obj_size;
+    int generations;
+    
+    double p_crossover;
+    double p_mutation;
+    double di_crossover;
+    double di_mutation;
+    
+    std::vector<std::pair<double, double> > var_lims;
+};
+
 class NSGAII
 {
 private:
@@ -70,7 +85,7 @@ public:
     
     void iterate();
 
-    std::vector<chromosome> optimise(char *input_parameter_file, std::vector<std::function<double(std::vector<double>)> > &objs);
+    std::vector<chromosome> optimise(nsga2_params &params, std::vector<std::function<double(std::vector<double>)> > &objs);
 };
 
 #endif

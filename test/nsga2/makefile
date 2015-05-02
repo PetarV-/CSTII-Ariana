@@ -14,7 +14,7 @@ nsga2_tester : $(OBJS)
 	$(MAKE) -C ../../src/nsga2
 
 ../../build/objectives.o :
-	$(CC) $(CFLAGS) ${OBJFILE} -o ../../build/objectives.o
+	$(CC) $(CFLAGS) $(OBJFILE) -o ../../build/objectives.o
 
 clean :
 	-rm -f ../../build/*.o *~ ../../bin/nsga2_tester &> /dev/null

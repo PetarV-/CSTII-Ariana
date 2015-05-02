@@ -375,26 +375,21 @@ void NSGAII::iterate()
     }
 }
 
-vector<chromosome> NSGAII::optimise(char *input_parameter_file, vector<function<double(vector<double>)> > &objs)
+vector<chromosome> NSGAII::optimise(nsga2_params &params, vector<function<double(vector<double>)> > &objs)
 {
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     generator = default_random_engine(seed);
     objectives = objs;
     
-    FILE *f = fopen(input_parameter_file, "r");
-    
-    fscanf(f, "%d", &pop_size);
-    fscanf(f, "%d", &ft_size);
-    fscanf(f, "%d", &obj_size);
-    fscanf(f, "%d", &generations);
-    fscanf(f, "%lf%lf", &p_crossover, &p_mutation);
-    fscanf(f, "%lf%lf", &di_crossover, &di_mutation);
-    for (int i=0;i<ft_size;i++)
-    {
-        double lo, hi;
-        fscanf(f, "%lf%lf", &lo, &hi);
-        var_lims.push_back(make_pair(lo, hi));
-    }
+    pop_size = params.pop_size;
+    ft_size = params.ft_size;
+    obj_size = params.obj_size;
+    generations = params.generations;
+    p_crossover = params.p_crossover;
+    p_mutation = params.p_mutation;
+    di_crossover = params.di_crossover;
+    di_mutation = params.di_mutation;
+    var_lims = params.var_lims;
     
     rand_index = uniform_int_distribution<int>(0, pop_size - 1);
     
@@ -411,8 +406,6 @@ vector<chromosome> NSGAII::optimise(char *input_parameter_file, vector<function<
     }
     
     printf("Done.\n");
-    
-    fclose(f);
     
     return main_population;
 }
