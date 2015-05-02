@@ -198,7 +198,7 @@ double MultiplexGMHMM::log_likelihood(vector<vector<double> > &test_data)
     
     double ret = 0.0;
     
-    double ***A = new double**[obs];
+    double ***A = new double**[test_data.size()];
     for (uint i=0;i<test_data.size();i++)
     {
         A[i] = new double*[L];
