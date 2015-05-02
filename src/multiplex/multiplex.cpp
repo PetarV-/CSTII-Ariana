@@ -19,7 +19,6 @@
 #include <multiplex.h>
 #include <matrix_lib.h>
 #include <nsga2.h>
-#include <objectives.h>
 #include <vector_cmp.h>
 
 #define DPRINTC(C) printf(#C " = %c\n", (C))
@@ -31,8 +30,6 @@
 using namespace std;
 typedef long long lld;
 typedef unsigned long long llu;
-
-static Multiplex *toplevel;
 
 Multiplex::Multiplex(int n, int L) : n(n), L(L)
 {
@@ -410,7 +407,6 @@ void Multiplex::train(vector<vector<vector<double> > > &train_set)
     sync();
     
     // Define the lambdas that calculate likelihoods for a given omega
-    toplevel = this;
     objectives.resize(train_set.size());
     for (uint t=0;t<train_set.size();t++)
     {
@@ -466,7 +462,8 @@ void Multiplex::train(vector<vector<vector<double> > > &train_set)
     fclose(f);
     
     // Run the algorithm
-    vector<chromosome> candidates = optimise((char*)filename.c_str());
+    NSGAII nsga2;
+    vector<chromosome> candidates = nsga2.optimise((char*)filename.c_str(), objectives);
     
     
     // Evaluate the best choice of omega
@@ -574,11 +571,6 @@ double Multiplex::log_likelihood(vector<vector<double> > &test_data)
     return -log(sqrt(ret));
 }
 
-vector<function<double(vector<double>)> > Multiplex::extract_objectives()
-{
-    return objectives;
-}
-
 void Multiplex::dump_muxviz_data(char *nodes_filename, char *base_layers_filename)
 {
     FILE *f = fopen(nodes_filename, "w");
@@ -612,8 +604,3 @@ void Multiplex::dump_muxviz_data(char *nodes_filename, char *base_layers_filenam
     
     printf("Done.\n");
 }
-
-//vector<function<double(vector<double>)> > get_objectives()
-//{
-//    return toplevel -> extract_objectives();
-//}

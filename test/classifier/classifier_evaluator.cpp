@@ -19,6 +19,7 @@
 #include <functional>
 #include <chrono>
 #include <random>
+#include <thread>
 
 #include <classifier.h>
 #include <classifier_evaluator.h>
@@ -124,9 +125,9 @@ run_result mean_result(vector<run_result> &individual)
     return ret;
 }
 
-run_result single_run(Classifier<vector<vector<double> >, bool> *C, vector<pair<vector<vector<double> >, bool> > &training_set, vector<pair<vector<vector<double> >, bool> > &test_set)
+void parallel_run(Classifier<vector<vector<double> >, bool> *C, vector<pair<vector<vector<double> >, bool> > &training_set, vector<pair<vector<vector<double> >, bool> > &test_set, run_result &ret)
 {
-    run_result ret;
+    printf("THREAD SPAWNED\n");
     ret.true_positives = ret.false_positives = 0;
     ret.false_negatives = ret.true_negatives = 0;
     
@@ -148,7 +149,6 @@ run_result single_run(Classifier<vector<vector<double> >, bool> *C, vector<pair<
         if (expected_inference) total_positives++;
         else total_negatives++;
     }
-    
     ret.accuracy = (ret.true_positives + ret.true_negatives) * 1.0 / total * 1.0;
     ret.precision = ret.true_positives * 1.0 / (ret.true_positives + ret.false_positives) * 1.0;
     ret.sensitivity = ret.true_positives * 1.0 / (ret.true_positives + ret.false_negatives) * 1.0;
@@ -194,8 +194,35 @@ run_result single_run(Classifier<vector<vector<double> >, bool> *C, vector<pair<
         if (!roc_meta[i].second) ret.roc_auc += old_sensitivity * (new_fpr - old_fpr);
         ret.roc_points[i+1] = make_pair(roc_meta[i].first, make_pair(new_sensitivity, new_fpr));
     }
+}
+
+run_result single_run(Classifier<vector<vector<double> >, bool> *C, vector<pair<vector<vector<double> >, bool> > &training_set, vector<pair<vector<vector<double> >, bool> > &test_set, int num_tests)
+{
+    C -> get_thresholds();
+    run_result max_run;
+    max_run.accuracy = -1.0;
+    while (num_tests > 0)
+    {
+        thread thrs[3];
+        run_result ret[4];
+        for (int i=0;i<3;i++)
+        {
+            thrs[i] = thread(&parallel_run, new MultiplexChainClassifier(5, 2), ref(training_set), ref(test_set), ref(ret[i]));
+        }
+        
+        parallel_run(new MultiplexChainClassifier(5, 2), training_set, test_set, ret[3]);
+        
+        for (int i=0;i<3;i++)
+        {
+            thrs[i].join();
+            if (ret[i].accuracy > max_run.accuracy) max_run = ret[i];
+        }
+        if (ret[3].accuracy > max_run.accuracy) max_run = ret[3];
+        
+        num_tests -= 4;
+    }
     
-    return ret;
+    return max_run;
 }
 
 run_result crossvalidate(Classifier<vector<vector<double> >, bool> *C, vector<pair<vector<vector<double> >, bool> > &training_set, int fold_cnt)
@@ -260,7 +287,7 @@ run_result crossvalidate(Classifier<vector<vector<double> >, bool> *C, vector<pa
         }
         
         printf("Starting crossvalidation step %d\n", i);
-        individual[i] = single_run(C, curr_train, curr_test);
+        individual[i] = single_run(C, curr_train, curr_test, 10);
         
         char cur_filename[150];
         sprintf(cur_filename, "results_%02d.out", i);

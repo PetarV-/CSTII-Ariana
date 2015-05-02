@@ -2,8 +2,6 @@
 #include <functional>
 #include <vector>
 
-#include <objectives.h>
-
 using namespace std;
 
 double POL_F1(vector<double> X)

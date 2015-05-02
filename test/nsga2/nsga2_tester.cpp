@@ -27,6 +27,8 @@ using namespace std;
 typedef long long lld;
 typedef unsigned long long llu;
 
+extern vector<function<double(vector<double>)> > get_objectives();
+
 int main(int argc, char **argv)
 {
     if (argc != 3)
@@ -36,8 +38,9 @@ int main(int argc, char **argv)
     }
     
     printf("Running NSGA-II...\n");
+    NSGAII nsga2;
     
-    vector<chromosome> final_generation = optimise(argv[1]);
+    vector<chromosome> final_generation = nsga2.optimise(argv[1], get_objectives());
     
     printf("Extracting Pareto front...\n");
     
@@ -47,7 +50,7 @@ int main(int argc, char **argv)
     
     int ii = 0;
     
-    list<chromosome> pareto_front = find_nondominated_front(final_generation);
+    list<chromosome> pareto_front = nsga2.find_nondominated_front(final_generation);
     
     for (list<chromosome>::iterator it = pareto_front.begin(); it != pareto_front.end(); it++)
     {

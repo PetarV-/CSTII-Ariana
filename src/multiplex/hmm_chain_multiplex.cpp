@@ -18,7 +18,6 @@
 
 #include <multiplex.h>
 #include <nsga2.h>
-#include <objectives.h>
 #include <vector_cmp.h>
 
 #define DPRINTC(C) printf(#C " = %c\n", (C))
@@ -31,8 +30,6 @@ using namespace std;
 typedef unsigned int uint;
 typedef long long lld;
 typedef unsigned long long llu;
-
-static HMMChainMultiplex *toplevel;
 
 HMMChainMultiplex::HMMChainMultiplex(int obs, int L) : obs(obs), L(L)
 {
@@ -94,7 +91,6 @@ void HMMChainMultiplex::train(vector<vector<vector<double> > > &train_set)
     }
     
     // Define the lambdas that calculate likelihoods for a given omega
-    toplevel = this;
     objectives.resize(train_set.size());
     for (uint t=0;t<train_set.size();t++)
     {
@@ -145,7 +141,8 @@ void HMMChainMultiplex::train(vector<vector<vector<double> > > &train_set)
     fclose(f);
     
     // Run the algorithm
-    vector<chromosome> candidates = optimise((char*)filename.c_str());
+    NSGAII nsga2;
+    vector<chromosome> candidates = nsga2.optimise((char*)filename.c_str(), objectives);
     
     // Evaluate the best choice of omega
     int best = -1;
@@ -262,11 +259,6 @@ double HMMChainMultiplex::log_likelihood(vector<vector<double> > &test_data)
     return ret;
 }
 
-vector<function<double(vector<double>)> > HMMChainMultiplex::extract_objectives()
-{
-    return objectives;
-}
-
 void HMMChainMultiplex::dump_muxviz_data(char *nodes_filename, char *base_layers_filename)
 {
     FILE *f = fopen(nodes_filename, "w");
@@ -296,9 +288,4 @@ void HMMChainMultiplex::dump_muxviz_data(char *nodes_filename, char *base_layers
     }
     
     printf("Done.\n");
-}
-
-vector<function<double(vector<double>)> > get_objectives()
-{
-    return toplevel -> extract_objectives();
 }

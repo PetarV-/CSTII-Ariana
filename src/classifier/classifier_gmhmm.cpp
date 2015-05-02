@@ -32,8 +32,8 @@ typedef unsigned long long llu;
 GMHMMClassifier::GMHMMClassifier(int gene_count, int param_id) : gene_count(gene_count), param_id(param_id)
 {
     // bounds on state space inspired by image processing papers
-    patient_model = new GMHMM(min(gene_count, 50), gene_count);
-    normal_model = new GMHMM(min(gene_count, 50), gene_count);
+    patient_model = new GMHMM(min(gene_count, 4), gene_count);
+    normal_model = new GMHMM(min(gene_count, 4), gene_count);
     thresholds.clear();
 }
 

@@ -18,7 +18,6 @@
 #include <random>
 
 #include <nsga2.h>
-#include <objectives.h>
 
 #define EPS 1e-9
 #define INF 987654321
@@ -34,32 +33,12 @@ typedef unsigned int uint;
 typedef long long lld;
 typedef unsigned long long llu;
 
-int pop_size;
-int ft_size;
-int obj_size;
-int generations;
-
-double p_crossover;
-double p_mutation;
-double di_crossover;
-double di_mutation;
-
-
-default_random_engine generator;
-uniform_int_distribution<int> rand_index;
-uniform_real_distribution<double> rand_real(0.0, 1.0);
-
-vector<pair<double, double> > var_lims;
-vector<function<double(vector<double>)> > objectives;
-
-vector<chromosome> main_population;
-
-bool cmp_by_key(chromosome &X, chromosome &Y)
+bool NSGAII::cmp_by_key(chromosome &X, chromosome &Y)
 {
     return (X.values[X.sort_key] < Y.values[Y.sort_key]);
 }
 
-bool is_equal(chromosome &X, chromosome &Y)
+bool NSGAII::is_equal(chromosome &X, chromosome &Y)
 {
     for (int i=0;i<ft_size;i++)
     {
@@ -68,7 +47,7 @@ bool is_equal(chromosome &X, chromosome &Y)
     return true;
 }
 
-bool dominated_by(chromosome &X, chromosome &Y)
+bool NSGAII::dominated_by(chromosome &X, chromosome &Y)
 {
     for (int i=0;i<obj_size;i++)
     {
@@ -77,17 +56,17 @@ bool dominated_by(chromosome &X, chromosome &Y)
     return true;
 }
 
-int get_ft_size()
+int NSGAII::get_ft_size()
 {
     return ft_size;
 }
 
-int get_obj_size()
+int NSGAII::get_obj_size()
 {
     return obj_size;
 }
 
-list<chromosome> find_nondominated_front(vector<chromosome> &P)
+list<chromosome> NSGAII::find_nondominated_front(vector<chromosome> &P)
 {
     list<chromosome> ret;
     ret.push_back(P[0]);
@@ -108,7 +87,7 @@ list<chromosome> find_nondominated_front(vector<chromosome> &P)
     return ret;
 }
 
-vector<vector<chromosome> > fast_nondominated_sort(vector<chromosome> &P)
+vector<vector<chromosome> > NSGAII::fast_nondominated_sort(vector<chromosome> &P)
 {
     vector<vector<chromosome> > F;
     
@@ -169,7 +148,7 @@ vector<vector<chromosome> > fast_nondominated_sort(vector<chromosome> &P)
     return F;
 }
 
-void crowding_distance_assignment(vector<chromosome> &I)
+void NSGAII::crowding_distance_assignment(vector<chromosome> &I)
 {
     int l = I.size();
     for (int i=0;i<l;i++) I[i].distance = 0;
@@ -185,7 +164,7 @@ void crowding_distance_assignment(vector<chromosome> &I)
     }
 }
 
-void initialise()
+void NSGAII::initialise()
 {
     main_population.clear();
     for (int i=0;i<pop_size;i++)
@@ -208,7 +187,7 @@ void initialise()
     }
 }
 
-int select(vector<chromosome> &P)
+int NSGAII::select(vector<chromosome> &P)
 {
     int i1 = rand_index(generator);
     int i2 = rand_index(generator);
@@ -220,7 +199,7 @@ int select(vector<chromosome> &P)
     else return i2;
 }
 
-pair<chromosome, chromosome> crossover(chromosome &P1, chromosome &P2)
+pair<chromosome, chromosome> NSGAII::crossover(chromosome &P1, chromosome &P2)
 {
     if (rand_real(generator) <= p_crossover)
     {
@@ -305,7 +284,7 @@ pair<chromosome, chromosome> crossover(chromosome &P1, chromosome &P2)
     }
 }
 
-void mutate(vector<chromosome> &P)
+void NSGAII::mutate(vector<chromosome> &P)
 {
     for (int i=0;i<pop_size;i++)
     {
@@ -355,7 +334,7 @@ void mutate(vector<chromosome> &P)
     }
 }
 
-void make_new_pop(vector<chromosome> &P)
+void NSGAII::make_new_pop(vector<chromosome> &P)
 {
     for (int i=0;i<pop_size >> 1;i++)
     {
@@ -376,7 +355,7 @@ void make_new_pop(vector<chromosome> &P)
     }
 }
 
-void iterate()
+void NSGAII::iterate()
 {
     make_new_pop(main_population);
     vector<vector<chromosome> > fronts = fast_nondominated_sort(main_population);
@@ -396,11 +375,11 @@ void iterate()
     }
 }
 
-vector<chromosome> optimise(char *input_parameter_file)
+vector<chromosome> NSGAII::optimise(char *input_parameter_file, vector<function<double(vector<double>)> > &objs)
 {
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     generator = default_random_engine(seed);
-    objectives = get_objectives();
+    objectives = objs;
     
     FILE *f = fopen(input_parameter_file, "r");
     

@@ -40,8 +40,6 @@ public:
     void train(std::vector<std::vector<std::vector<double> > > &train_set);
     double log_likelihood(std::vector<std::vector<double> > &test_data);
     
-    std::vector<std::function<double(std::vector<double>)> > extract_objectives();
-    
     void dump_muxviz_data(char *nodes_filename, char *base_layers_filename);
 };
 
@@ -62,8 +60,6 @@ public:
     void train(std::vector<std::vector<std::vector<double> > > &train_set);
     double log_likelihood(std::vector<std::vector<double> > &test_data);
     
-    std::vector<std::function<double(std::vector<double>)> > extract_objectives();
-    
     void dump_muxviz_data(char *nodes_filename, char *base_layers_filename);
 };
 
@@ -83,8 +79,6 @@ public:
     void set_omega(double **omega);
     void train(std::vector<std::vector<std::vector<double> > > &train_set);
     double log_likelihood(std::vector<std::vector<double> > &test_data);
-    
-    std::vector<std::function<double(std::vector<double>)> > extract_objectives();
     
     void dump_muxviz_data(char *nodes_filename, char *base_layers_filename);
 };

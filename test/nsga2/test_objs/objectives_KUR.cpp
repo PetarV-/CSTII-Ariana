@@ -2,8 +2,6 @@
 #include <functional>
 #include <vector>
 
-#include <objectives.h>
-
 using namespace std;
 
 double KUR_F1(vector<double> X)

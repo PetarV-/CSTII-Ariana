@@ -1,8 +1,6 @@
 #include <functional>
 #include <vector>
 
-#include <objectives.h>
-
 using namespace std;
 
 double SCH_F1(vector<double> X)

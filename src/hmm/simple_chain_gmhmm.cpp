@@ -177,6 +177,109 @@ void SimpleChainGMHMM::train(vector<vector<double> > &train_set)
     }
 }
 
+void SimpleChainGMHMM::train(vector<vector<pair<double, int> > > &train_set)
+{
+    // get means and std. deviations
+    for (int i=0;i<obs;i++)
+    {
+        mu[i] = 0.0;
+        sigma[i] = 0.0;
+    }
+    
+    for (uint i=0;i<train_set.size();i++)
+    {
+        for (int j=0;j<obs;j++)
+        {
+            mu[train_set[i][j].second] += train_set[i][j].first;
+        }
+    }
+    
+    for (int i=0;i<obs;i++) mu[i] /= train_set.size();
+    
+    for (uint i=0;i<train_set.size();i++)
+    {
+        for (int j=0;j<obs;j++)
+        {
+            sigma[train_set[i][j].second] += (train_set[i][j].first - mu[train_set[i][j].second]) * (train_set[i][j].first - mu[train_set[i][j].second]);
+        }
+    }
+    
+    for (int i=0;i<obs;i++) sigma[i] = sqrt(sigma[i] / (train_set.size() - 1));
+    
+    printf("Mus/Sigmas calculated: \n");
+    for (int i=0;i<obs;i++)
+    {
+        printf("(%lf, %lf)\n", mu[i], sigma[i]);
+    }
+    
+    // determine observation probabilities for each position
+    for (int i=0;i<obs;i++)
+    {
+        for (int j=0;j<obs;j++)
+        {
+            G[i][j] = 0.0;
+        }
+    }
+    
+    // initially, sort all the vectors and determine the scaling parameter
+    double epsilon = 1e-6; // the smallest score possible, can be tweaked
+    double max_diff = 0.0; // the maximal difference observed
+    
+    for (uint i=0;i<train_set.size();i++)
+    {
+        for (int j=0;j<obs;j++)
+        {
+            for (int k=0;k<obs;k++)
+            {
+                double curr_diff = train_set[i][j].first - train_set[i][k].first;
+                if (curr_diff > max_diff) max_diff = curr_diff;
+            }
+        }
+    }
+    
+    double lambda = -log(epsilon) / max_diff;
+    DPRINTLF(lambda);
+    
+    // now calculate full scores
+    for (uint i=0;i<train_set.size();i++)
+    {
+        for (int j=0;j<obs;j++)
+        {
+            double pos_val = train_set[i][j].first;
+            for (int k=0;k<obs;k++)
+            {
+                double curr_val = train_set[i][k].first;
+                int curr_gene = train_set[i][k].second;
+                G[j][curr_gene] += exp(-lambda * fabs(curr_val - pos_val)); // e^(-lambda*diff)
+            }
+        }
+    }
+    
+    // finally, normalise the scores
+    for (int i=0;i<obs;i++)
+    {
+        double sum = 0.0;
+        for (int j=0;j<obs;j++)
+        {
+            sum += G[i][j];
+        }
+        for (int j=0;j<obs;j++)
+        {
+            G[i][j] /= sum;
+        }
+    }
+    
+    printf("OBSERVATION MATRIX\n");
+    for (int i=0;i<obs;i++)
+    {
+        for (int j=0;j<obs;j++)
+        {
+            printf("%lf ", G[i][j]);
+        }
+        printf("\n");
+    }
+}
+
 double SimpleChainGMHMM::log_likelihood(vector<double> &test_data)
 {
     vector<pair<double, int> > sorted_data;
@@ -184,6 +287,19 @@ double SimpleChainGMHMM::log_likelihood(vector<double> &test_data)
     for (int i=0;i<obs;i++) sorted_data[i] = make_pair(test_data[i], i);
     sort(sorted_data.begin(), sorted_data.end());
     
+    double ret = 0.0;
+    for (int i=0;i<obs;i++)
+    {
+        double curr_val = sorted_data[i].first;
+        int curr_gene = sorted_data[i].second;
+        ret += log(G[i][curr_gene]) + log(get_probability(curr_gene, curr_val));
+    }
+    
+    return ret;
+}
+
+double SimpleChainGMHMM::log_likelihood(vector<pair<double, int> > &sorted_data)
+{
     double ret = 0.0;
     for (int i=0;i<obs;i++)
     {

@@ -83,8 +83,8 @@ GMHMM::GMHMM(int n, int obs) : n(n), obs(obs)
         }
     }
     
-    this -> mu = new double[n];
-    this -> sigma = new double[n];
+    this -> mu = new double[obs];
+    this -> sigma = new double[obs];
 }
 
 GMHMM::GMHMM(int n, int obs, double *pi, double **T, double **O, double *mu, double *sigma) : n(n), obs(obs)
@@ -112,9 +112,9 @@ GMHMM::GMHMM(int n, int obs, double *pi, double **T, double **O, double *mu, dou
         }
     }
     
-    this -> mu = new double[n];
-    this -> sigma = new double[n];
-    for (int i=0;i<n;i++)
+    this -> mu = new double[obs];
+    this -> sigma = new double[obs];
+    for (int i=0;i<obs;i++)
     {
         this -> mu[i] = mu[i];
         this -> sigma[i] = sigma[i];
@@ -324,6 +324,151 @@ void GMHMM::baumwelch(vector<vector<double> > &Ys, int iterations, double tolera
         
         O = nextO;
         
+        printf("%.10lf\n", lhood - oldlhood);
+        
+        if (fabs(lhood - oldlhood) < tolerance)
+        {
+            printf("Converged after %d iterations!\n", iter + 1);
+            break;
+        }
+        
+        if ((iter + 1) % 20 == 0)
+        {
+            printf("Completed %d iterations\n", iter + 1);
+        }
+        
+        oldlhood = lhood;
+    }
+    
+    printf("Baum-Welch procedure completed.\n");
+    
+    printf("START-STATE VECTOR:\n");
+    for (int i=0;i<n;i++) printf("%lf ", pi[i]);
+    printf("\n");
+    
+    printf("TRANSITION MATRIX:\n");
+    for (int i=0;i<n;i++)
+    {
+        for (int j=0;j<n;j++)
+        {
+            printf("%lf ", T[i][j]);
+        }
+        printf("\n");
+    }
+    
+    printf("OBSERVATION MATRIX\n");
+    for (int i=0;i<n;i++)
+    {
+        for (int j=0;j<obs;j++)
+        {
+            printf("%lf ", O[i][j]);
+        }
+        printf("\n");
+    }
+}
+
+void GMHMM::baumwelch(vector<vector<pair<double, int> > > &sorted_Ys, int iterations, double tolerance)
+{
+    double ***alpha = new double**[sorted_Ys.size()];
+    double ***beta = new double**[sorted_Ys.size()];
+    double **c = new double*[sorted_Ys.size()];
+    
+    double PP, QQ;
+    
+    double lhood = 0.0;
+    double oldlhood = 0.0;
+    
+    for (int iter=0;iter<iterations;iter++)
+    {
+        lhood = 0.0;
+        
+        for (uint l=0;l<sorted_Ys.size();l++)
+        {
+            tuple<double**, double*, double> x = forward(sorted_Ys[l]);
+            alpha[l] = get<0>(x);
+            c[l] = get<1>(x);
+            lhood += get<2>(x);
+            beta[l] = backward(sorted_Ys[l], c[l]);
+        }
+        
+        double **nextO = new double*[n];
+        for (int i=0;i<n;i++) nextO[i] = new double[obs];
+        
+        for (int i=0;i<n;i++)
+        {
+            pi[i] = 0.0;
+            for (uint l=0;l<sorted_Ys.size();l++)
+            {
+                pi[i] += alpha[l][0][i] * beta[l][0][i];
+            }
+            pi[i] /= sorted_Ys.size();
+            
+            QQ = 0.0;
+            
+            for (int k=0;k<obs;k++)
+            {
+                nextO[i][k] = 0.0;
+            }
+            
+            for (uint l=0;l<sorted_Ys.size();l++)
+            {
+                for (uint t=0;t<sorted_Ys[l].size()-1;t++)
+                {
+                    double curr = alpha[l][t][i] * beta[l][t][i];
+                    QQ += curr;
+                    nextO[i][sorted_Ys[l][t].second] += curr;
+                }
+            }
+            
+            for (int j=0;j<n;j++)
+            {
+                PP = 0.0;
+                for (uint l=0;l<sorted_Ys.size();l++)
+                {
+                    for (uint t=0;t<sorted_Ys[l].size()-1;t++)
+                    {
+                        PP += alpha[l][t][i] * O[j][sorted_Ys[l][t+1].second] * get_probability(sorted_Ys[l][t+1].second, sorted_Ys[l][t+1].first) * beta[l][t+1][j] * c[l][t+1];
+                    }
+                }
+                T[i][j] *= PP / QQ;
+            }
+            
+            for (uint l=0;l<sorted_Ys.size();l++)
+            {
+                int lim = sorted_Ys[l].size() - 1;
+                double curr = alpha[l][lim][i] * beta[l][lim][i];
+                QQ += curr;
+                nextO[i][sorted_Ys[l][lim].second] += curr;
+            }
+            
+            for (int k=0;k<obs;k++)
+            {
+                nextO[i][k] /= QQ;
+            }
+        }
+        
+        for (uint l=0;l<sorted_Ys.size();l++)
+        {
+            for (uint t=0;t<sorted_Ys[l].size();t++)
+            {
+                delete[] alpha[l][t];
+                delete[] beta[l][t];
+            }
+            delete[] alpha[l];
+            delete[] beta[l];
+            delete[] c[l];
+        }
+        
+        for (int i=0;i<n;i++)
+        {
+            delete[] O[i];
+        }
+        delete[] O;
+        
+        O = nextO;
+        
+        printf("%.10lf\n", lhood - oldlhood);
+        
         if (fabs(lhood - oldlhood) < tolerance)
         {
             printf("Converged after %d iterations!\n", iter + 1);
@@ -420,8 +565,133 @@ void GMHMM::train(vector<vector<double> > &train_set)
         printf("(%lf, %lf)\n", mu[i], sigma[i]);
     }
     
+    // reset the initial probabilities
+    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+    gen = default_random_engine(seed);
+    
+    double total = 0.0;
+    for (int i=0;i<n;i++)
+    {
+        this -> pi[i] = rnd_real(gen);
+        total += this -> pi[i];
+    }
+    for (int i=0;i<n;i++)
+    {
+        this -> pi[i] /= total;
+    }
+    
+    for (int i=0;i<n;i++)
+    {
+        total = 0.0;
+        for (int j=0;j<n;j++)
+        {
+            this -> T[i][j] = rnd_real(gen);
+            total += this -> T[i][j];
+        }
+        for (int j=0;j<n;j++)
+        {
+            this -> T[i][j] /= total;
+        }
+    }
+    
+    for (int i=0;i<n;i++)
+    {
+        total = 0.0;
+        for (int j=0;j<obs;j++)
+        {
+            this -> O[i][j] = rnd_real(gen);
+            total += this -> O[i][j];
+        }
+        for (int j=0;j<n;j++)
+        {
+            this -> O[i][j] /= total;
+        }
+    }
+    
     // now run the Baum-Welch algorithm
-    baumwelch(train_set, 500, 1e-10);
+    baumwelch(train_set, 10000000, 1e-7);
+}
+
+void GMHMM::train(vector<vector<pair<double, int> > > &train_set)
+{
+    // get means and std. deviations
+    for (int i=0;i<obs;i++)
+    {
+        mu[i] = 0.0;
+        sigma[i] = 0.0;
+    }
+    
+    for (uint i=0;i<train_set.size();i++)
+    {
+        for (int j=0;j<obs;j++)
+        {
+            mu[train_set[i][j].second] += train_set[i][j].first;
+        }
+    }
+    
+    for (int i=0;i<obs;i++) mu[i] /= train_set.size();
+    
+    for (uint i=0;i<train_set.size();i++)
+    {
+        for (int j=0;j<obs;j++)
+        {
+            sigma[train_set[i][j].second] += (train_set[i][j].first - mu[train_set[i][j].second]) * (train_set[i][j].first - mu[train_set[i][j].second]);
+        }
+    }
+    
+    for (int i=0;i<obs;i++) sigma[i] = sqrt(sigma[i] / (train_set.size() - 1));
+    
+    printf("Mus/Sigmas calculated: \n");
+    for (int i=0;i<obs;i++)
+    {
+        printf("(%lf, %lf)\n", mu[i], sigma[i]);
+    }
+    
+    // reset the initial probabilities
+    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+    gen = default_random_engine(seed);
+    
+    double total = 0.0;
+    for (int i=0;i<n;i++)
+    {
+        this -> pi[i] = rnd_real(gen);
+        total += this -> pi[i];
+    }
+    for (int i=0;i<n;i++)
+    {
+        this -> pi[i] /= total;
+    }
+    
+    for (int i=0;i<n;i++)
+    {
+        total = 0.0;
+        for (int j=0;j<n;j++)
+        {
+            this -> T[i][j] = rnd_real(gen);
+            total += this -> T[i][j];
+        }
+        for (int j=0;j<n;j++)
+        {
+            this -> T[i][j] /= total;
+        }
+    }
+    
+    for (int i=0;i<n;i++)
+    {
+        total = 0.0;
+        for (int j=0;j<obs;j++)
+        {
+            this -> O[i][j] = rnd_real(gen);
+            total += this -> O[i][j];
+        }
+        for (int j=0;j<n;j++)
+        {
+            this -> O[i][j] /= total;
+        }
+    }
+    
+    // now run the Baum-Welch algorithm
+    baumwelch(train_set, 10000000, 1e-7);
 }
 
 double GMHMM::log_likelihood(vector<double> &test_data)
@@ -436,6 +706,22 @@ double GMHMM::log_likelihood(vector<double> &test_data)
     double *c = get<1>(x);
     
     for (uint i=0;i<test_data.size();i++)
+    {
+        delete[] alpha[i];
+    }
+    delete[] alpha;
+    delete[] c;
+    
+    return get<2>(x);
+}
+
+double GMHMM::log_likelihood(vector<pair<double, int> > &sorted_data)
+{
+    tuple<double**, double*, double> x = forward(sorted_data);
+    double **alpha = get<0>(x);
+    double *c = get<1>(x);
+    
+    for (uint i=0;i<sorted_data.size();i++)
     {
         delete[] alpha[i];
     }

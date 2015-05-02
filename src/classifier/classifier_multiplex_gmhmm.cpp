@@ -31,8 +31,8 @@ typedef unsigned long long llu;
 
 MultiplexGMHMMClassifier::MultiplexGMHMMClassifier(int gene_count, int type_count) : gene_count(gene_count), type_count(type_count)
 {
-    patient_model = new MultiplexGMHMM(min(gene_count, 50), gene_count, type_count);
-    normal_model = new MultiplexGMHMM(min(gene_count, 50), gene_count, type_count);
+    patient_model = new MultiplexGMHMM(min(gene_count, 4), gene_count, type_count);
+    normal_model = new MultiplexGMHMM(min(gene_count, 4), gene_count, type_count);
     thresholds.clear();
 }
 

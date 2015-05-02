@@ -10,3 +10,12 @@ bool compare_euclidean(pair<vector<double>, int> &A, pair<vector<double>, int> &
     for (uint i=0;i<B.first.size();i++) sB += B.first[i] * B.first[i];
     return sA < sB;
 }
+
+bool compare_lex(pair<vector<double>, int> &A, pair<vector<double>, int> &B)
+{
+    for (uint i=0;i<A.first.size();i++)
+    {
+        if (A.first[i] != B.first[i]) return (A.first[i] < B.first[i]);
+    }
+    return false;
+}

@@ -69,6 +69,12 @@ void SingleChainClassifier::train(vector<pair<vector<vector<double> >, bool> > &
         }
     }
     
+    for (int j=0;j<gene_count;j++)
+    {
+        printf("%lf ", training_set[0].first[j][param_id]);
+    }
+    printf("\n");
+    
     patient_model -> train(train_patient);
     normal_model -> train(train_normal);
     

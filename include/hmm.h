@@ -51,7 +51,9 @@ public:
     double get_G(int x, int y);
     double get_probability(int obs_id, double x);
     void train(std::vector<std::vector<double> > &train_set);
+    void train(std::vector<std::vector<std::pair<double, int> > > &train_set); // sorted
     double log_likelihood(std::vector<double> &test_data);
+    double log_likelihood(std::vector<std::pair<double, int> > &sorted_data); // sorted
 };
 
 class GMHMM
@@ -71,13 +73,16 @@ public:
     std::tuple<double**, double*, double> forward(std::vector<std::pair<double, int> > &Y);
     double** backward(std::vector<std::pair<double, int> > &Y, double *c);
     void baumwelch(std::vector<std::vector<double> > &Ys, int iterations, double tolerance);
+    void baumwelch(std::vector<std::vector<std::pair<double, int> > > &sorted_Ys, int iterations, double tolerance); // sorted
     
     double get_pi(int x);
     double get_T(int i, int j);
     double get_O(int x, int y);
     double get_probability(int obs_id, double x);
     void train(std::vector<std::vector<double> > &train_set);
+    void train(std::vector<std::vector<std::pair<double, int> > > &train_set); // sorted
     double log_likelihood(std::vector<double> &test_data);
+    double log_likelihood(std::vector<std::pair<double, int> > &sorted_data); // sorted
 };
 
 #endif

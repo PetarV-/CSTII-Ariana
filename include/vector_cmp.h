@@ -5,4 +5,6 @@
 
 bool compare_euclidean(std::pair<std::vector<double>, int> &A, std::pair<std::vector<double>, int> &B);
 
+bool compare_lex(std::pair<std::vector<double>, int> &A, std::pair<std::vector<double>, int> &B);
+
 #endif
