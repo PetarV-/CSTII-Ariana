@@ -1,8 +1,8 @@
 OBJS = ../../build/classifier_evaluator.o ../../build/classifier_single_chain.o ../../build/classifier_multiplex_chain.o ../../build/classifier_gmhmm.o ../../build/classifier_multiplex_gmhmm.o ../../build/classifier_generic_single_layer.o ../../build/classifier_generic_multiplex.o ../../build/simple_chain_gmhmm.o ../../build/hmm_chain_multiplex.o ../../build/gmhmm.o ../../build/multiplex_gmhmm.o ../../build/layers.o ../../build/multiplex.o ../../build/nsga2.o ../../build/phi.o ../../build/vector_cmp.o ../../build/matrix_lib.o ../../build/simple_tester.o
-CC = g++ -I../../include
+CC = clang++ -I../../include
 DEBUG = -g
 CFLAGS = -std=c++11 -O3 -Wall -Wextra -Werror -Weffc++ -Wstrict-aliasing --pedantic -c $(DEBUG)
-LFLAGS = -Wall $(DEBUG)
+LFLAGS = -lpthread -Wall $(DEBUG)
 
 simple_tester : $(OBJS)
 	$(CC) $(LFLAGS) $(OBJS) -o ../../bin/simple_tester

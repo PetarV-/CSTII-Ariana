@@ -3,7 +3,7 @@
 using namespace std;
 typedef unsigned int uint;
 
-bool compare_euclidean(pair<vector<double>, int> &A, pair<vector<double>, int> &B)
+bool compare_euclidean(const pair<vector<double>, int> &A, const pair<vector<double>, int> &B)
 {
     double sA = 0.0, sB = 0.0;
     for (uint i=0;i<A.first.size();i++) sA += A.first[i] * A.first[i];
@@ -11,7 +11,7 @@ bool compare_euclidean(pair<vector<double>, int> &A, pair<vector<double>, int> &
     return sA < sB;
 }
 
-bool compare_lex(pair<vector<double>, int> &A, pair<vector<double>, int> &B)
+bool compare_lex(const pair<vector<double>, int> &A, const pair<vector<double>, int> &B)
 {
     for (uint i=0;i<A.first.size();i++)
     {

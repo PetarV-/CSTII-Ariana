@@ -48,7 +48,7 @@ private:
     std::vector<chromosome> main_population;
     
 public:
-    static bool cmp_by_key(chromosome &X, chromosome &Y);
+    static bool cmp_by_key(const chromosome &X, const chromosome &Y);
     bool is_equal(chromosome &X, chromosome &Y);
     bool dominated_by(chromosome &X, chromosome &Y);
     

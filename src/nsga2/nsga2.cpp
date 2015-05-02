@@ -33,7 +33,7 @@ typedef unsigned int uint;
 typedef long long lld;
 typedef unsigned long long llu;
 
-bool NSGAII::cmp_by_key(chromosome &X, chromosome &Y)
+bool NSGAII::cmp_by_key(const chromosome &X, const chromosome &Y)
 {
     return (X.values[X.sort_key] < Y.values[Y.sort_key]);
 }
