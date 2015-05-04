@@ -125,6 +125,68 @@ run_result mean_result(vector<run_result> &individual)
     return ret;
 }
 
+run_result stderr_result(vector<run_result> &individual, run_result &means)
+{
+    int res_cnt = individual.size();
+    
+    run_result ret;
+    ret.accuracy = 0.0;
+    ret.precision = 0.0;
+    ret.sensitivity = 0.0;
+    ret.specificity = 0.0;
+    ret.false_positive_rate = 0.0;
+    ret.negative_predictive_value = 0.0;
+    ret.false_discovery_rate = 0.0;
+    ret.mcc = 0.0;
+    ret.f1_score = 0.0;
+    
+    // Must have at least two samples for corrected stddev
+    if (res_cnt == 1) return ret;
+    
+    for (int i=0;i<res_cnt;i++)
+    {
+        ret.accuracy += (individual[i].accuracy - means.accuracy) * (individual[i].accuracy - means.accuracy);
+        ret.precision += (individual[i].precision - means.precision) * (individual[i].precision - means.precision);
+        ret.sensitivity += (individual[i].sensitivity - means.sensitivity) * (individual[i].sensitivity - means.sensitivity);
+        ret.specificity += (individual[i].specificity - means.specificity) * (individual[i].specificity - means.specificity);
+        ret.false_positive_rate += (individual[i].false_positive_rate - means.false_positive_rate) * (individual[i].false_positive_rate - means.false_positive_rate);
+        ret.negative_predictive_value += (individual[i].negative_predictive_value - means.negative_predictive_value) * (individual[i].negative_predictive_value - means.negative_predictive_value);
+        ret.false_discovery_rate += (individual[i].false_discovery_rate - means.false_discovery_rate) * (individual[i].false_discovery_rate - means.false_discovery_rate);
+        ret.mcc += (individual[i].mcc - means.mcc) * (individual[i].mcc - means.mcc);
+        ret.f1_score += (individual[i].f1_score - means.f1_score) * (individual[i].f1_score - means.f1_score);
+    }
+    
+    ret.accuracy /= ((res_cnt - 1) * 1.0);
+    ret.precision /= ((res_cnt - 1) * 1.0);
+    ret.sensitivity /= ((res_cnt - 1) * 1.0);
+    ret.specificity /= ((res_cnt - 1) * 1.0);
+    ret.false_positive_rate /= ((res_cnt - 1) * 1.0);
+    ret.negative_predictive_value /= ((res_cnt - 1) * 1.0);
+    ret.false_discovery_rate /= ((res_cnt - 1) * 1.0);
+    ret.mcc /= ((res_cnt - 1) * 1.0);
+    ret.f1_score /= ((res_cnt - 1) * 1.0);
+    
+    ret.accuracy = sqrt(ret.accuracy / res_cnt);
+    ret.precision = sqrt(ret.precision / res_cnt);
+    ret.sensitivity = sqrt(ret.sensitivity / res_cnt);
+    ret.specificity = sqrt(ret.specificity / res_cnt);
+    ret.false_positive_rate = sqrt(ret.false_positive_rate / res_cnt);
+    ret.negative_predictive_value = sqrt(ret.negative_predictive_value / res_cnt);
+    ret.false_discovery_rate = sqrt(ret.false_discovery_rate / res_cnt);
+    ret.mcc = sqrt(ret.mcc / res_cnt);
+    ret.f1_score = sqrt(ret.f1_score / res_cnt);
+    
+    ret.roc_auc = 0.0;
+    for (int i=0;i<res_cnt;i++)
+    {
+        ret.roc_auc += (individual[i].roc_auc - means.roc_auc) * (individual[i].roc_auc - means.roc_auc);
+    }
+    ret.roc_auc /= ((res_cnt - 1) * 1.0);
+    ret.roc_auc = sqrt(ret.roc_auc / res_cnt);
+    
+    return ret;
+}
+
 void parallel_run(Classifier<vector<vector<double> >, bool> *C, vector<pair<vector<vector<double> >, bool> > &training_set, vector<pair<vector<vector<double> >, bool> > &test_set, run_result &ret)
 {
     printf("THREAD SPAWNED\n");
@@ -194,6 +256,8 @@ void parallel_run(Classifier<vector<vector<double> >, bool> *C, vector<pair<vect
         if (!roc_meta[i].second) ret.roc_auc += old_sensitivity * (new_fpr - old_fpr);
         ret.roc_points[i+1] = make_pair(roc_meta[i].first, make_pair(new_sensitivity, new_fpr));
     }
+    
+    delete C;
 }
 
 run_result single_run(Classifier<vector<vector<double> >, bool> *C, vector<pair<vector<vector<double> >, bool> > &training_set, vector<pair<vector<vector<double> >, bool> > &test_set, int num_tests)
@@ -203,23 +267,23 @@ run_result single_run(Classifier<vector<vector<double> >, bool> *C, vector<pair<
     max_run.accuracy = -1.0;
     while (num_tests > 0)
     {
-        thread thrs[3];
+        //thread thrs[3];
         run_result ret[4];
-        for (int i=0;i<3;i++)
-        {
-            thrs[i] = thread(&parallel_run, new MultiplexChainClassifier(5, 2), ref(training_set), ref(test_set), ref(ret[i]));
-        }
+        //for (int i=0;i<3;i++)
+        //{
+        //    thrs[i] = thread(&parallel_run, new MultiplexChainClassifier(5, 2), ref(training_set), ref(test_set), ref(ret[i]));
+        //}
         
         parallel_run(new MultiplexChainClassifier(5, 2), training_set, test_set, ret[3]);
         
-        for (int i=0;i<3;i++)
-        {
-            thrs[i].join();
-            if (ret[i].accuracy > max_run.accuracy) max_run = ret[i];
-        }
+        //for (int i=0;i<3;i++)
+        //{
+        //    thrs[i].join();
+        //    if (ret[i].accuracy > max_run.accuracy) max_run = ret[i];
+        //}
         if (ret[3].accuracy > max_run.accuracy) max_run = ret[3];
         
-        num_tests -= 4;
+        num_tests -= 1;
     }
     
     return max_run;
@@ -287,7 +351,7 @@ run_result crossvalidate(Classifier<vector<vector<double> >, bool> *C, vector<pa
         }
         
         printf("Starting crossvalidation step %d\n", i);
-        individual[i] = single_run(C, curr_train, curr_test, 10);
+        individual[i] = single_run(C, curr_train, curr_test, 1);
         
         char cur_filename[150];
         sprintf(cur_filename, "results_%02d.out", i);
@@ -339,10 +403,13 @@ run_result single_noise_test(Classifier<vector<vector<double> >, bool> *C, vecto
     }
     
     run_result ret = mean_result(individual);
+    run_result dev = stderr_result(individual, ret);
     
     char filename[101];
     sprintf(filename, "results_noisy_full.out");
     dump_result(ret, false, filename, noise_mean, noise_stddev);
+    sprintf(filename, "results_noisy_stderr.out");
+    dump_result(dev, false, filename, noise_mean, noise_stddev);
     
     return ret;
 }

@@ -27,6 +27,8 @@ struct run_result
 
 run_result mean_result(std::vector<run_result> &individual);
 
+run_result stderr_result(std::vector<run_result> &individual, run_result &means);
+
 run_result single_run(Classifier<std::vector<std::vector<double> >, bool> *C, std::vector<std::pair<std::vector<std::vector<double> >, bool> > &training_set, std::vector<std::pair<std::vector<std::vector<double> >, bool> > &test_set, int num_tests = 1);
 
 run_result crossvalidate(Classifier<std::vector<std::vector<double> >, bool> *C, std::vector<std::pair<std::vector<std::vector<double> >, bool> > &training_set, int fold_cnt = 10);
