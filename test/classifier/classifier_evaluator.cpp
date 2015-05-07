@@ -260,28 +260,28 @@ void parallel_run(Classifier<vector<vector<double> >, bool> *C, vector<pair<vect
     delete C;
 }
 
-run_result single_run(Classifier<vector<vector<double> >, bool> *C, vector<pair<vector<vector<double> >, bool> > &training_set, vector<pair<vector<vector<double> >, bool> > &test_set, int num_tests)
+run_result single_run(Classifier<vector<vector<double> >, bool> *C, vector<pair<vector<vector<double> >, bool> > &training_set, vector<pair<vector<vector<double> >, bool> > &test_set, int num_tests, int num_threads)
 {
-    C -> get_thresholds();
     run_result max_run;
     max_run.accuracy = -1.0;
     while (num_tests > 0)
     {
-        //thread thrs[3];
-        run_result ret[4];
-        //for (int i=0;i<3;i++)
-        //{
-        //    thrs[i] = thread(&parallel_run, new MultiplexChainClassifier(5, 2), ref(training_set), ref(test_set), ref(ret[i]));
-        //}
+        vector<thread> thrs;
+        vector<run_result> ret;
+        ret.resize(num_threads);
+        for (int i=0;i<num_threads - 1;i++)
+        {
+            thrs.push_back(thread(&parallel_run, C, ref(training_set), ref(test_set), ref(ret[i])));
+        }
         
-        parallel_run(new MultiplexChainClassifier(5, 2), training_set, test_set, ret[3]);
+        parallel_run(C, training_set, test_set, ret[num_threads - 1]);
         
-        //for (int i=0;i<3;i++)
-        //{
-        //    thrs[i].join();
-        //    if (ret[i].accuracy > max_run.accuracy) max_run = ret[i];
-        //}
-        if (ret[3].accuracy > max_run.accuracy) max_run = ret[3];
+        for (int i=0;i<num_threads - 1;i++)
+        {
+            thrs[i].join();
+            if (ret[i].accuracy > max_run.accuracy) max_run = ret[i];
+        }
+        if (ret[num_threads - 1].accuracy > max_run.accuracy) max_run = ret[num_threads - 1];
         
         num_tests -= 1;
     }
