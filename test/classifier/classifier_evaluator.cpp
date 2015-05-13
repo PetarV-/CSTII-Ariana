@@ -256,8 +256,6 @@ void parallel_run(Classifier<vector<vector<double> >, bool> *C, vector<pair<vect
         if (!roc_meta[i].second) ret.roc_auc += old_sensitivity * (new_fpr - old_fpr);
         ret.roc_points[i+1] = make_pair(roc_meta[i].first, make_pair(new_sensitivity, new_fpr));
     }
-    
-    delete C;
 }
 
 run_result single_run(Classifier<vector<vector<double> >, bool> *C, vector<pair<vector<vector<double> >, bool> > &training_set, vector<pair<vector<vector<double> >, bool> > &test_set, int num_tests, int num_threads)
