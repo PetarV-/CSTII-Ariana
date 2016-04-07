@@ -1,7 +1,7 @@
 CSTII-Ariana
 ============
 
-This repository served as the primary hosting and development platform for my final-year project for Part II of the Computer Science Tripos.
+This repository served as the primary hosting and development platform for my final-year project for Part II of the Computer Science Tripos, entitled *"Molecular multiplex network inference"* and supervised by [Dr Pietro Liò](http://www.cl.cam.ac.uk/~pl219/).
 
 Development of this repository has ceased, and its final state is exactly as submitted. It is retained solely for the purposes of keeping a few relevant links alive. The accompanying dissertation [has its own repository](https://github.com/PetarV-/CSTII-Dissertation).
 
